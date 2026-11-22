@@ -1,0 +1,131 @@
+/* scratch-blocks dressed as the SPIKE app: category column, palette, pickers and the in-page dialog. */
+.blocklyText, .blocklyHtmlInput, .blocklyFlyoutLabelText, .scratchNotePickerKeyLabel,
+.blocklyDropDownDiv .goog-menuitem, .blocklyWidgetDiv .goog-menuitem {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+.blocklyText { font-weight: 500; }
+.blocklyMainBackground { stroke: none; }
+
+/* The app edges every block's white text with four thin shadows, a strength per category (Переменные and Мои блоки were not
+   read there: they take the values of the nearest colours). --fill is the block colour, the pickers below use it.
+   Child selectors on purpose: the next block in a stack is nested inside this block's group and must not inherit the edge. */
+[data-category="motor"] { --fill: #0090F5; --edge: rgba(0, 0, 0, 0.16); }
+[data-category="move"] { --fill: #FF4CCD; --edge: rgba(0, 0, 0, 0.21); }
+[data-category="light"] { --fill: #9B6AF6; --edge: rgba(0, 0, 0, 0.12); }
+[data-category="sounds"] { --fill: #C061F1; --edge: rgba(0, 0, 0, 0.26); }
+[data-category="events"] { --fill: #F5C402; --edge: rgba(0, 0, 0, 0.42); }
+[data-category="control"] { --fill: #FFB515; --edge: rgba(0, 0, 0, 0.39); }
+[data-category="sensing"] { --fill: #34CCF1; --edge: rgba(0, 0, 0, 0.37); }
+[data-category="operators"] { --fill: #00B94D; --edge: rgba(0, 0, 0, 0.26); }
+[data-category="data"], [data-category="data-lists"] { --fill: #FF8F24; --edge: rgba(0, 0, 0, 0.39); }
+[data-category="more"] { --fill: #FF5D64; --edge: rgba(0, 0, 0, 0.21); }
+[data-category] > .blocklyText,
+[data-category] > g > .blocklyDropdownText,
+[data-category] > [data-argument-type] > g > .blocklyDropdownText {
+  text-shadow: -1px -1px 0 var(--edge), 1px -1px 0 var(--edge), -1px 1px 0 var(--edge), 1px 1px 0 var(--edge);
+}
+.raSwatch > .blocklyPath { stroke: #fff; }
+
+/* Category column: 62 px wide, an item is 60x68 as in the app. On a short screen the items give up height evenly
+   before anything scrolls; its scrollbar would take 15 px (Windows, Linux) and cover the labels, so then it scrolls by wheel or touch. */
+.blocklyToolboxDiv { width: 62px; scrollbar-width: none; }
+.blocklyToolboxDiv::-webkit-scrollbar { display: none; }
+.scratchCategoryMenu {
+  box-sizing: border-box; display: flex; flex-direction: column; width: 62px; height: 100%; min-height: 456px; padding: 12px 0 4px;
+  color: #434343; font: 400 9.5px/16px "Helvetica Neue", Helvetica, Arial, sans-serif; letter-spacing: -0.4px;
+}
+.scratchCategoryMenuRow { flex: 0 1 68px; min-height: 44px; display: flex; }
+.scratchCategoryMenuItem { flex: 1; min-width: 0; margin-left: 2px; padding: 0; border-radius: 15px; display: flex; flex-direction: column; justify-content: center; }
+.scratchCategoryMenuItem:hover { color: #000 !important; background: #fafafa; }
+.scratchCategoryMenuItem.categorySelected { background: #f5f5f5; }
+.scratchCategoryMenuItem:focus-visible { outline: 3px solid var(--azure, #00adc4); outline-offset: -2px; border-radius: 15px; }
+.scratchCategoryItemBubble { flex: none; width: 20px; height: 20px; border: 0; margin: 0 auto 7px; }
+.categorySelected .scratchCategoryItemBubble { opacity: 0.65; }
+.scratchCategoryMenuItemLabel { text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* handdelete.cur does not ship with the package. */
+.blocklyDragging.blocklyDraggingDelete, .blocklyToolboxDelete { cursor: not-allowed; }
+
+/* Palette. Sizes are in block units: the palette is drawn at the workspace's start scale. */
+.blocklyFlyoutBackground { fill-opacity: 1; }
+.blocklyFlyout { border-right: 1px solid #f5f5f5; box-sizing: border-box; }
+.blocklyFlyoutLabelText { font-size: 34px; letter-spacing: -1.35px; fill: #7c7c7c; }
+.blocklyFlyoutButton:hover .blocklyFlyoutButtonBackground { fill: #f5f5f5; }
+
+/* Open menus keep scratch-blocks' own look, which is the app's; the hovered row takes the block colour. */
+.blocklyDropDownContent { max-height: 350px; }
+.blocklyDropDownDiv .goog-menuitem { font-size: 13px; }
+.blocklyDropDownDiv .goog-menuitem-highlight, .blocklyDropDownDiv .goog-menuitem-hover { background-color: var(--fill, rgba(0, 0, 0, 0.2)); }
+/* The vendor stylesheet wants a sprites.png that does not ship with the package. */
+.blocklyDropDownDiv .goog-option-selected .goog-menuitem-checkbox,
+.blocklyDropDownDiv .goog-option-selected .goog-menuitem-icon {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5 6.5 12 13 4.5' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center !important;
+}
+
+/* Our pickers inside the dropdown. Direction: square buttons side by side, the chosen one in the block colour. */
+.blocklyDropDownDiv button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+.raPick { display: flex; gap: 4px; }
+.raPick__btn {
+  box-sizing: border-box; width: 32px; height: 32px; padding: 0; display: grid; place-items: center;
+  border: 1px solid rgba(0, 0, 0, 0.55); border-radius: 4px; background: rgba(0, 0, 0, 0.1); cursor: pointer;
+}
+.raPick__btn:hover { background: rgba(255, 255, 255, 0.15); }
+.raPick__btn[aria-pressed="true"] { background: var(--fill); }
+/* Colours: a 3x3 grid of circles, «нет цвета» is the crossed one. */
+.raPick--grid { display: grid; grid-template-columns: repeat(3, 56px); gap: 0; }
+.raPick--grid .raPick__btn { width: 54px; height: 54px; margin: 1px; border-color: rgba(0, 0, 0, 0.15); background: rgba(255, 255, 255, 0.06); }
+.raPick--grid .raPick__btn[aria-pressed="true"] { background: var(--fill); border-color: transparent; }
+.raPick__btn i { width: 40px; height: 40px; border-radius: 50%; }
+.raPick__none { background: linear-gradient(to top right, #fff 45%, #c20012 45% 55%, #fff 55%); box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.3); }
+
+/* Ports: the hub from above in black lines on the block colour, a chosen port is black. */
+.raHub { overflow: hidden; }
+.raHub button:focus-visible { outline: 3px solid #000; outline-offset: 2px; }
+.raHub__art { position: relative; height: 300px; transform-origin: 0 0; color: #000; font: 700 15px/1 "Helvetica Neue", Helvetica, Arial, sans-serif; }
+.raHub__body {
+  position: absolute; left: 50%; top: 33px; box-sizing: border-box; width: 160px; height: 230px; margin-left: -80px; padding-top: 20px;
+  display: grid; grid-template-columns: 32px 1fr 32px; grid-auto-rows: 46px; row-gap: 10px; align-content: start;
+  border: 2px solid #000; border-radius: 13px;
+}
+.raHub__port { box-sizing: border-box; padding: 0; border: 2px solid #000; border-radius: 6px; background: none; color: inherit; font: inherit; cursor: pointer; }
+.raHub__port:nth-of-type(odd) { grid-column: 1; margin-left: -2px; }
+.raHub__port:nth-of-type(even) { grid-column: 3; margin-right: -2px; }
+.raHub__port:hover { background: rgba(0, 0, 0, 0.12); }
+.raHub__port[aria-pressed="true"] { background: #000; color: var(--fill); }
+.raHub__button {
+  position: absolute; left: 50%; bottom: 12px; box-sizing: border-box; width: 44px; height: 44px; margin-left: -22px;
+  border: 2px solid #000; border-radius: 50%; box-shadow: inset 0 0 0 3px var(--fill), inset 0 0 0 5px #000;
+}
+/* The pair picker adds the two motors with their port letters; the lit one is set by the next click. */
+.raHub__motor {
+  position: absolute; top: 33px; box-sizing: border-box; width: 57px; height: 155px; padding-bottom: 24px;
+  display: flex; align-items: flex-end; justify-content: center; border: 2px solid #000; border-radius: 10px; font-size: 30px;
+}
+.raHub__motor::before { content: ""; position: absolute; top: 8px; box-sizing: border-box; width: 17px; height: 47px; border: 2px solid #000; }
+.raHub__motor--l { left: 47px; }
+.raHub__motor--l::before { right: 100%; border-right: 0; border-radius: 4px 0 0 4px; }
+.raHub__motor--r { right: 47px; }
+.raHub__motor--r::before { left: 100%; border-left: 0; border-radius: 0 4px 4px 0; }
+.raHub__motor.is-next { background: rgba(255, 255, 255, 0.3); }
+
+/* Steering: the dial, and under it minus, the value in words and plus. */
+.raDial { width: 128px; color: #fff; font: 500 13px/1 "Helvetica Neue", Helvetica, Arial, sans-serif; }
+.raDial svg { display: block; touch-action: none; cursor: pointer; }
+.raDial__row { display: flex; align-items: center; justify-content: space-between; height: 37px; }
+.raDial__row button {
+  box-sizing: border-box; width: 24px; height: 24px; padding: 0 0 2px; border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 50%;
+  background: none; color: inherit; font: inherit; font-size: 16px; cursor: pointer;
+}
+.raDial__row button:hover { background: rgba(255, 255, 255, 0.2); }
+
+/* Notes sit right above their stack, the leader line would only cross the block text. */
+.blocklyBubbleCanvas > g > line { display: none; }
+
+/* In-page dialog for names and confirmations. */
+.raDialog { width: min(420px, calc(100% - 32px)); padding: 24px; border: 2px solid var(--ink); border-radius: 16px; color: var(--ink); background: var(--paper); }
+.raDialog::backdrop { background: rgba(16, 32, 42, 0.45); }
+.raDialog h3 { font-size: 20px; margin-bottom: 12px; }
+.raDialog label { display: block; font-size: 17px; line-height: 1.4; }
+.raDialog input { display: block; width: 100%; margin-top: 10px; padding: 10px 12px; font: 500 18px var(--font-body); color: var(--ink); border: 2px solid var(--line); border-radius: 10px; }
+.raDialog input:focus { outline: none; border-color: var(--azure); }
+.raDialog__row { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }

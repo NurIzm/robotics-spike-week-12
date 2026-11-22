@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>VM check</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/blocks.css">
+<style>
+  body { padding: 16px; font: 15px/1.5 Consolas, monospace; background: #fff; }
+  h1 { font: 700 20px Arial, sans-serif; margin-bottom: 8px; }
+  #out div { white-space: pre-wrap; }
+  .pass { color: #00703c; } .fail { color: #c2410c; font-weight: 700; }
+  /* The VM needs a live workspace, but nobody has to look at it. */
+  #w { position: fixed; left: -3000px; top: 0; width: 1000px; height: 700px; }
+</style>
+</head>
+<body>
+<h1 id="sum">Идёт проверка…</h1>
+<div id="out"></div>
+<div id="w"></div>
+<div id="toasts" class="toasts"></div>
+<script src="../vendor/blockly/blockly_compressed_vertical.js"></script>
+<script src="../vendor/blockly/blocks_compressed.js"></script>
+<script src="../vendor/blockly/blocks_compressed_vertical.js"></script>
+<script src="../vendor/blockly/messages.js"></script>
+<script src="../vendor/blockly/msg_ru.js"></script>
+<script src="../js/core.js"></script>
+<script src="../js/blocks.js"></script>
+<script src="../js/programs.js"></script>
+<script src="../js/vm.js"></script>
+<script>
+// Runs the VM against a fake hw whose clock is driven by hand, and prints one line per check.
+(async function () {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const calls = [];
+  const seen = (name) => calls.filter((c) => c[0] === name);
+  const did = (name, ...args) => calls.some((c) => c[0] === name && JSON.stringify(c.slice(1)) === JSON.stringify(args));
+  const rec = (name, ret) => (...args) => { calls.push([name, ...args]); return ret; };
+  // On white paper; `reads` counts how often a program looks at the reflected light.
+  const state = { button: false, tilted: false, gesture: false, color: 10, reflected: 95, reads: 0 };
+
+  // The fake simulator clock. One tick is one physics step of 0.01 s: time moves, the sleepers that are due wake, then everyone
+  // who waits for the tick, and the event loop gets its turn before the next step, as the real simulator promises.
+  let tick = 0, ticking = [], sleeping = [];
+  const channel = new MessageChannel();
+  const turn = () => new Promise((res) => { channel.port1.onmessage = res; channel.port2.postMessage(0); });
+  const ticks = async (count) => {
+    for (let i = 0; i < count; i++) {
+      tick++;
+      sleeping = sleeping.filter((s) => s.at > tick || s.res());
+      ticking.splice(0).forEach((res) => res());
+      await turn();
+    }
+  };
+  const later = (name, sec) => (...args) => { calls.push([name, ...args]); return hw.sleep(sec); };
+
+  // Motors only record what they are told; a measured move is done after `takes` seconds of the fake clock.
+  const wrap = (deg) => ((Math.round(deg) % 360) + 540) % 360 - 180;
+  const motor = (p, takes) => ({
+    run: rec(p + '.run'), stop: rec(p + '.stop'), runFor: later(p + '.runFor', takes),
+    runForSeconds(sec, pct, dir) { calls.push([p + '.runForSeconds', sec, pct, dir]); return hw.sleep(sec); },
+    goTo(deg, mode, speed) { calls.push([p + '.goTo', deg, mode, speed]); return hw.sleep(takes).then(() => { this.position = wrap(deg); }); },
+    position: 0, speedPct: 0, defaultSpeed: 75,
+  });
+  const hw = {
+    ports: { B: 'color', C: 'motor', D: 'motor', E: 'motor' },
+    motors: {},
+    display: { setImage: rec('setImage'), clear: rec('clear'), setPixel: rec('setPixel'), setBrightness: rec('setBrightness'),
+      rotate: rec('rotate'), setOrientation: rec('setOrientation'), scroll: later('scroll', 0.02) },
+    centerLight: rec('centerLight'),
+    sound: { beep: later('beep', 0.02), beepStart: rec('beepStart'), stop: rec('sound.stop'), play: later('play', 0.02), volume: 100,
+      setEffect: rec('setEffect'), changeEffect: rec('changeEffect'), clearEffects: rec('clearEffects') },
+    sensors: { color: () => state.color, reflected: () => { state.reads++; return state.reflected; },
+      button: () => state.button, tilted: () => state.tilted, orientationUp: (n) => n === 'top', gesture: () => state.gesture,
+      angle: (a) => (a === 'yaw' ? 15 : 0), resetYaw: rec('resetYaw') },
+    now: () => tick / 100,
+    tick: () => new Promise((res) => ticking.push(res)),
+    sleep: (sec) => new Promise((res) => sleeping.push({ at: tick + Math.round(sec * 100), res })),
+    onEvent() {},
+    reset: rec('reset'),
+  };
+  // The right wheel's motor is the slower one, so «both motors are done» can be told from «one is done».
+  const fresh = () => { hw.motors = { C: motor('C', 0.03), D: motor('D', 0.06), E: motor('E', 0.02) }; };
+  fresh();
+  // What the wheels were told last, in % with forward positive: [left, right].
+  const wheels = () => ['C', 'D'].map((p, i) => { const c = seen(p + '.run').pop(); return c ? c[1] * c[2] * (i ? 1 : -1) : null; });
+
+  const toasts = [];
+  RA.toast = (text, kind) => toasts.push([text, kind]);
+  const crashes = [];
+  addEventListener('unhandledrejection', (e) => crashes.push(String(e.reason)));
+  addEventListener('error', (e) => crashes.push(e.message));
+
+  const bl = RA.createBlocks(RA.$('#w'), { media: '../vendor/media/' });
+  const states = [];
+  const vm = RA.createVM(bl.workspace, hw, { onState: (on) => states.push(on) });
+
+  let good = 0, bad = 0;
+  const line = (ok, name, why) => {
+    ok ? good++ : bad++;
+    const el = document.createElement('div');
+    el.className = ok ? 'pass' : 'fail';
+    el.textContent = (ok ? 'PASS  ' : 'FAIL  ') + name + (ok || !why ? '' : '  → ' + why);
+    RA.$('#out').append(el);
+    console.log(el.textContent);
+  };
+  const check = (name, ok, why) => line(!!ok, name, why === undefined ? JSON.stringify(calls.slice(-6)) : why);
+
+  // Small XML kit.
+  const v = (name, shadow) => `<value name="${name}">${shadow}</value>`;
+  const number = (name, n) => v(name, `<shadow type="math_number"><field name="NUM">${n}</field></shadow>`);
+  const text = (name, s) => v(name, `<shadow type="text"><field name="TEXT">${s}</field></shadow>`);
+  const menu = (name, key, value, over = '') => v(name, `<shadow type="flipper${key}-selector"><field name="field_flipper${key}-selector">${value}</field></shadow>${over}`);
+  const port = (p, cat = 'motor') => menu('PORT', cat + '_multiple-port', p);
+  const b = (type, inner) => ({ type, inner: inner || '' });
+  // Next-linked chain of blocks.
+  const chain = (...list) => list.reduceRight((next, x) => `<block type="${x.type}">${x.inner}${next ? `<next>${next}</next>` : ''}</block>`, '');
+  const stack = (...list) => `<statement name="SUBSTACK">${chain(...list)}</statement>`;
+  const inner = (x) => `<block type="${x.type}">${x.inner}</block>`;
+  const top = (xml, y = 20) => xml.replace('<block', `<block x="20" y="${y}"`);
+  const start = (...list) => top(chain(b('flipperevents_whenProgramStarts'), ...list));
+  const decl = '<variables><variable type="" id="vx">x</variable><variable type="list" id="vl">l</variable><variable type="broadcast_msg" id="mg">go</variable></variables>';
+  const xv = '<field name="VARIABLE" id="vx" variabletype="">x</field>';
+  const xl = '<field name="LIST" id="vl" variabletype="list">l</field>';
+  const msg = '<field name="BROADCAST_OPTION" id="mg" variabletype="broadcast_msg">go</field>';
+  const say = (x) => b('flipperlight_lightDisplayText', `<value name="TEXT">${inner(x)}</value>`);
+  const say2 = (s) => b('flipperlight_lightDisplayText', text('TEXT', s));
+  const says = () => seen('scroll').map((c) => c[1]);
+  const off = b('flipperlight_lightDisplayOff');
+  const offs = () => seen('clear').length;
+  const repeat = (times, ...list) => b('control_repeat', v('TIMES', `<shadow type="math_whole_number"><field name="NUM">${times}</field></shadow>`) + stack(...list));
+  const wait = (sec) => b('control_wait', v('DURATION', `<shadow type="math_positive_number"><field name="NUM">${sec}</field></shadow>`));
+  const cond = (x) => `<value name="CONDITION">${inner(x)}</value>`;
+  const pressed = b('flippersensors_buttonIsPressed', '<field name="BUTTON">left</field><field name="EVENT">pressed</field>');
+  const isDark = b('flippersensors_isReflectivity', port('B', 'sensing') + '<field name="COMPARATOR">lt</field>' + number('VALUE', 50));
+
+  const load = (xml) => { vm.stop(); fresh(); bl.load(`<xml>${decl}${xml}</xml>`); calls.length = 0; toasts.length = 0; states.length = 0; };
+  // Starts a program and lets its threads run up to their first wait. start() stops everything first: that is not the program's doing.
+  const begin = async (xml) => { load(xml); vm.start(); calls.length = 0; await turn(); };
+  const finished = async (max = 3000) => { for (let i = 0; vm.running && i < max; i++) await ticks(1); };
+  // Runs a program to its natural end.
+  const run = async (xml) => { await begin(xml); await finished(); };
+
+  /* ---------- The six task programs ---------- */
+  const P = RA.PROGRAMS, FIT = 560 / 0.675;
+  const count = (s, re) => (s.match(re) || []).length;
+  check('programs: six tasks, each with a starter and a solution', P.length === 6 && P.every((p) => p.starter && p.solution), String(P.length));
+  for (let i = 0; i < P.length; i++) {
+    const why = [], noise = [], keep = [console.error, console.warn];
+    console.error = console.warn = (...a) => noise.push(a.join(' '));
+    for (const kind of ['starter', 'solution']) {
+      vm.stop();
+      try { bl.load(P[i][kind]); } catch (e) { why.push(kind + ': ' + e.message); continue; }
+      await sleep(5);                       // the loader opens the notes on a 1 ms timer
+      const saved = bl.save(), box = bl.workspace.getBlocksBoundingBox(), note = (/<comment[^>]*>/.exec(saved) || [''])[0];
+      const attr = (k) => +(new RegExp(` ${k}="([\\d.]+)"`).exec(note) || [])[1];
+      if (count(saved, /<(block|shadow) /g) !== count(P[i][kind], /<(block|shadow) /g)) why.push(kind + ': blocks were lost on the way in');
+      if (box.x < 0 || box.x + box.width > FIT) why.push(`${kind}: blocks reach x ${Math.round(box.x + box.width)} of ${Math.round(FIT)}`);
+      if (note && !(attr('x') >= 0 && attr('x') + attr('w') <= FIT)) why.push(`${kind}: the note reaches x ${attr('x') + attr('w')} of ${Math.round(FIT)}`);
+      if ((kind === 'starter' || !i) !== note.includes('pinned="true"')) why.push(kind + ': the pinned note');
+      if (bl.workspace.getTopBlocks(false)[0].type !== 'flipperevents_whenProgramStarts') why.push(kind + ': no start hat on top');
+    }
+    [console.error, console.warn] = keep;
+    check(`program ${i + 1}: loads whole and quietly, fits 560 px at scale 0.675, the starter has its note`, !why.length && !noise.length, why.concat(noise).join(' | '));
+  }
+  // A task program on white paper, a few ticks in.
+  const task = async (xml, s) => {
+    vm.stop(); fresh();
+    Object.assign(state, { color: 10, reflected: 95 }, s);
+    bl.load(xml);
+    toasts.length = 0;
+    vm.start();
+    calls.length = 0;
+    await ticks(3);
+  };
+  // The end of a program stops every motor, a movement block only the wheels: C and D were told to stop more often than E.
+  const braked = () => ['C', 'D'].every((p) => seen(p + '.stop').length > seen('E.stop').length);
+  const see = async (s) => { Object.assign(state, s); calls.length = 0; await ticks(1); return wheels().join(); };
+
+  await task(P[0].solution);
+  check('task 1: only the hat, the program ends at once and tells nothing', !vm.running && !toasts.length && !calls.some((c) => /\.run/.test(c[0])), JSON.stringify(toasts));
+  await task(P[1].starter);
+  const blind = wheels().join();
+  await see({ reflected: 5 });
+  check('task 2 starter: drives on at 30 %, over the line too', blind === '30,30' && !calls.length && vm.running && !toasts.length, blind + ' ' + vm.running);
+  await task(P[1].solution);
+  const before = wheels().join() + seen('C.stop').length + vm.running;
+  state.reflected = 20;
+  await ticks(1);
+  check('task 2 solution: both motors start, and stop once the light drops under 50', before === '30,300true' && braked() && !vm.running, before + ' ' + braked() + vm.running);
+  await task(P[2].starter);
+  check('task 3 starter: the loop runs with empty branches, nothing drives', vm.running && !calls.some((c) => /\.run/.test(c[0])) && !toasts.length);
+  await task(P[2].solution);
+  const light3 = wheels().join(), dark3 = await see({ reflected: 20 });
+  check('task 3 solution: on light left −30 (12 and 30 %), on dark right 30 (30 and 12 %)', light3 === '12,30' && dark3 === '30,12' && vm.running, light3 + ' | ' + dark3);
+  await task(P[3].starter);
+  const light4 = wheels().join(), dark4 = await see({ reflected: 20 });
+  check('task 4 starter: the zigzag of task 3', light4 === '12,30' && dark4 === '30,12', light4 + ' | ' + dark4);
+  await task(P[3].solution);
+  const [l4, r4] = wheels(), [l4d, r4d] = (await see({ reflected: 20 })).split(',').map(Number);
+  check('task 4 solution: the same zigzag, faster than 30 %', r4 > 30 && l4 < r4 && l4d === r4 && r4d < l4d, `${l4},${r4} | ${l4d},${r4d}`);
+  await task(P[4].starter);
+  const straight = wheels().join() + '|' + await see({ reflected: 20 });
+  const loose = bl.workspace.getTopBlocks(false).map((x) => x.type).sort().join();
+  check('task 5 starter: straight ahead whatever the sensor sees, the expression lies loose', /^(\d+),\1\|\1,\1$/.test(straight)
+    && loose === 'flipperevents_whenProgramStarts,operator_multiply', straight + ' ' + loose);
+  await task(P[4].solution, { reflected: 50 });
+  const edge = wheels(), bitDark = (await see({ reflected: 40 })).split(',').map(Number);
+  const veryDark = (await see({ reflected: 20 })).split(',').map(Number), bright = (await see({ reflected: 80 })).split(',').map(Number);
+  check('task 5 solution: straight on the edge, right on dark, left on light, sharper the further from 50', edge[0] === edge[1]
+    && bitDark[1] < bitDark[0] && veryDark[1] < bitDark[1] && bright[0] < bright[1], [edge, bitDark, veryDark, bright].join(' | '));
+  await task(P[5].starter);
+  await see({ color: 9 });
+  check('task 6 starter: follows the line and drives over red', wheels().join() === '12,30' && !seen('C.stop').length && vm.running, wheels().join());
+  await task(P[5].solution);
+  const going = wheels().join() + seen('C.stop').length;
+  state.color = 9;
+  await ticks(1);
+  check('task 6 solution: follows until red, then stops', going === '12,300' && braked() && !vm.running, going + ' ' + braked() + vm.running);
+  vm.stop();
+  Object.assign(state, { color: 10, reflected: 95 });
+
+  /* ---------- Movement blocks ---------- */
+  const cd = b('flippermove_setMovementPair', menu('PAIR', 'move_pair', 'CD'));
+  const setSpeed = (pct) => b('flippermove_movementSpeed', number('SPEED', pct));
+  const startMove = (dir) => b('flippermove_startMove', `<field name="DIRECTION">${dir}</field>`);
+  const startSteer = (s, over) => b('flippermove_startSteer', menu('STEERING', 'move_steering', s, over));
+  const stopMove = b('flippermove_stopMove');
+  const move = (dir, n, unit) => b('flippermove_move', `<field name="DIRECTION">${dir}</field><field name="UNIT">${unit}</field>` + number('VALUE', n));
+  const steer = (s, n, unit) => b('flippermove_steer', menu('STEERING', 'move_steering', s) + `<field name="UNIT">${unit}</field>` + number('VALUE', n));
+  const setTurn = (n, unit) => b('flippermove_setDistance', number('DISTANCE', n) + `<field name="UNIT">${unit}</field>`);
+  const two = (a, c) => number('NUM1', a) + number('NUM2', c);
+
+  await begin(start(cd, startMove('forward')));
+  check('start moving forward: 50 % by default, left motor C counterclockwise, right motor D clockwise', did('C.run', 50, -1) && did('D.run', 50, 1) && calls.length === 2);
+  await ticks(5);
+  check('a motor left running keeps the program going', vm.running && !seen('C.stop').length, 'running=' + vm.running);
+  vm.stop();
+  check('stop() stops the wheels', seen('C.stop').length && seen('D.stop').length && !vm.running);
+  await begin(start(cd, setSpeed(30), startMove('backward')));
+  check('start moving backward at 30 %: C clockwise, D counterclockwise', did('C.run', 30, 1) && did('D.run', 30, -1));
+  await begin(start(cd, startMove('forward'), stopMove));
+  check('stop moving: both motors stop and the program is over', calls.slice(0, 4).map((c) => c[0]).join() === 'C.run,D.run,C.stop,D.stop' && !vm.running);
+  await begin(start(b('flippermove_setMovementPair', menu('PAIR', 'move_pair', 'DC')), startMove('forward')));
+  check('pair D+C: the first letter is the left motor', did('D.run', 50, -1) && did('C.run', 50, 1));
+
+  // Steering: the outer wheel keeps the speed, the inner one runs at speed × (1 − |s| / 50).
+  const steered = [];
+  for (const s of [0, 30, 50, 100, -30, -100]) { await begin(start(cd, startSteer(s))); steered.push(wheels().join()); }
+  check('steering 0, 30, 50, 100, −30, −100 at 50 %', steered.join(' | ') === '50,50 | 50,20 | 50,0 | 50,-50 | 20,50 | -50,50', steered.join(' | '));
+  check('steering −100: the inner motor gets a positive speed and the other direction', did('C.run', 50, 1) && did('D.run', 50, 1));
+  await begin(start(cd, setSpeed(30), startSteer(30)));
+  check('steering 30 at 30 %: 30 and 12', wheels().join() === '30,12', wheels().join());
+  const dropped = [];
+  for (const [x, y] of [[200, 50], [29.4, 0.2], [-70, -70]]) { await begin(start(cd, startSteer(0, inner(b('operator_add', two(x, y)))))); dropped.push(wheels().join()); }
+  check('a reporter on the steering input: 250 is clamped to 100, 29.6 rounds to 30, −140 to −100', dropped.join(' | ') === '50,-50 | 50,20 | -50,50', dropped.join(' | '));
+
+  // Measured moves: the outer wheel turns the amount, the inner one its share.
+  await run(start(cd, move('forward', 17.5, 'cm'), move('forward', 35, 'cm')));
+  check('move 17.5 cm is one turn, 35 cm two', did('C.runFor', -360, 50) && did('D.runFor', 360, 50) && did('C.runFor', -720, 50) && did('D.runFor', 720, 50));
+  await run(start(cd, setTurn(20, 'cm'), move('forward', 10, 'cm'), setTurn(5, 'inches'), move('forward', 12.7, 'cm'), move('backward', 5, 'inches')));
+  check('a changed distance: 10 of 20 cm is half a turn; 5 inches are 12.7 cm', did('D.runFor', 180, 50) && did('C.runFor', -180, 50)
+    && did('D.runFor', 360, 50) && did('D.runFor', -360, 50) && did('C.runFor', 360, 50), JSON.stringify(calls));
+  await run(start(cd, move('forward', 2, 'rotations'), move('backward', 90, 'degrees'), move('forward', -1, 'rotations')));
+  check('move in rotations and degrees, backward, and a negative amount the other way', did('C.runFor', -720, 50) && did('D.runFor', 720, 50)
+    && did('C.runFor', 90, 50) && did('D.runFor', -90, 50) && did('C.runFor', 360, 50) && did('D.runFor', -360, 50), JSON.stringify(calls));
+  await run(start(cd, move('forward', 0.05, 'seconds'), move('backward', 0.05, 'seconds')));
+  check('move in seconds: both motors run for that time', did('C.runForSeconds', 0.05, 50, -1) && did('D.runForSeconds', 0.05, 50, 1)
+    && did('C.runForSeconds', 0.05, 50, 1) && did('D.runForSeconds', 0.05, 50, -1), JSON.stringify(calls));
+  await run(start(cd, steer(30, 1, 'rotations')));
+  check('steer right 30 for 1 rotation: left 360° at 50 %, right 144° at 20 %', did('C.runFor', -360, 50) && did('D.runFor', 144, 20));
+  await run(start(cd, steer(-30, 90, 'degrees')));
+  check('steer left −30 for 90 degrees: right 90° at 50 %, left 36° at 20 %', did('D.runFor', 90, 50) && did('C.runFor', -36, 20));
+  await run(start(cd, steer(100, 0.05, 'seconds')));
+  check('steer right 100 for seconds: the right wheel runs backwards for the same time', did('C.runForSeconds', 0.05, 50, -1) && did('D.runForSeconds', 0.05, 50, -1));
+  await run(start(cd, steer(50, 1, 'rotations')));
+  check('steer 50: the inner wheel stands still', did('C.runFor', -360, 50) && !seen('D.runFor').length && seen('D.stop').length > 0);
+  await begin(start(cd, move('forward', 10, 'cm'), off));
+  await ticks(5);
+  const early = offs();
+  await ticks(1);
+  check('a measured move waits for both motors (C is done after 3 ticks, D after 6)', early === 0 && offs() === 1 && !vm.running, early + ' ' + offs());
+  await begin(start(cd, move('forward', 5, 'rotations'), off));
+  vm.stop();
+  await ticks(10);
+  check('stop() cancels a measured move', !offs() && !vm.running);
+
+  // The app's default pair is A+B, and this robot has no motors there.
+  const WHEELS = 'Колёса этого робота в портах C и D: поставь в начало блок «установить моторы для движения C+D».';
+  await run(start(startMove('forward'), move('forward', 10, 'cm'), startSteer(30), steer(30, 1, 'rotations'), stopMove, say2('still here')));
+  check('no pair set: one warning, every movement block is skipped, the program goes on', toasts.length === 1 && toasts[0][1] === 'warn'
+    && toasts[0][0] === 'В портах A и B нет моторов. ' + WHEELS && says().join() === 'still here' && !calls.some((c) => /^[A-F]\.run/.test(c[0])), JSON.stringify(toasts));
+  await run(start(startMove('forward')));
+  check('no pair set: warns again on the next run', toasts.length === 1, JSON.stringify(toasts));
+  await run(start(b('flippermove_setMovementPair', menu('PAIR', 'move_pair', 'CB')), startMove('forward')));
+  check('pair C+B: the sensor port is no motor', toasts.length === 1 && toasts[0][0] === 'В порту B нет мотора. ' + WHEELS && !seen('C.run').length, JSON.stringify(toasts));
+
+  /* ---------- The simulated clock ---------- */
+  await begin(start(repeat(3, off)));
+  const passes = [offs() + String(vm.running)];
+  for (let i = 0; i < 3; i++) { await ticks(1); passes.push(offs() + String(vm.running)); }
+  check('repeat 3: one pass per tick, three passes take three ticks', passes.join() === '1true,2true,3true,3false', passes.join());
+  check('natural end: running falls back to false', !vm.running && states.join() === 'true,false', states.join());
+  await begin(start(b('control_forever', stack(off))));
+  await ticks(10);
+  const spins = offs();
+  await sleep(60);
+  check('forever: ten ticks, ten more passes, and none between the ticks', spins === 11 && offs() === 11 && vm.running, spins + ' ' + offs());
+  vm.stop();
+  const after = offs();
+  await ticks(5);
+  check('forever: stop() ends it', offs() === after && !vm.running, `${after} then ${offs()}`);
+  await begin(start(b('control_forever')));
+  await ticks(3);
+  check('forever: an empty body waits for the ticks too', vm.running);
+  state.reads = 0;
+  await begin(start(b('control_wait_until', cond(isDark)), say2('go')));
+  const first = state.reads;
+  await ticks(5);
+  const waiting = state.reads + says().join();
+  state.reflected = 20;
+  await ticks(1);
+  state.reflected = 95;
+  check('wait until: looks once at the start and once per tick, goes on in the tick it comes true', first === 1 && waiting === '6' && state.reads === 7 && says().join() === 'go', `${first} ${waiting} ${state.reads} ${says().join()}`);
+  await finished();
+  await begin(start(wait(0.1), off));
+  await ticks(9);
+  const soon = offs();
+  await ticks(1);
+  check('wait 0.1 s: ten ticks of the simulated clock', soon === 0 && offs() === 1, soon + ' ' + offs());
+  await begin(start(wait(5), off));
+  await ticks(3);
+  vm.stop();
+  await ticks(600);
+  check('wait: stop() cancels a long wait', !vm.running && !offs());
+  const timer = b('flippersensors_timer');
+  await run(start(wait(0.05), say(timer), b('flippersensors_resetTimer'), say(timer), wait(0.3), say(timer)));
+  check('timer: simulated seconds, resets, no rounding dust (the second text scrolls for 0.02 s)', says().join() === '0.05,0,0.32', says().join());
+  await begin(top(chain(b('flipperevents_whenTimer', number('VALUE', 0.1)), say2('time'))));
+  await ticks(10);
+  const none = says().length;
+  await ticks(1);
+  const fired = says().join();
+  await ticks(30);
+  check('hat: the timer hat fires once, in the first tick past 0.1 s', none === 0 && fired === 'time' && says().join() === 'time', `${none} ${fired} ${says().join()}`);
+  check('hat: a listening program keeps running', vm.running, 'stopped');
+  await begin(top(chain(b('flipperevents_whenCondition', cond(pressed)), say2('c'))));
+  state.button = true;
+  await sleep(60);
+  const unpolled = says().length;
+  await ticks(1);
+  state.button = false;
+  check('hats are polled on the tick, not by a timer of the page', unpolled === 0 && says().join() === 'c', unpolled + ' ' + says().join());
+  vm.stop();
+
+  // Nothing here waits for a tick: the block count has to give the page a rest.
+  await begin(top(chain(b('flipperevents_whenProgramStarts'), b('event_broadcast', `<value name="BROADCAST_INPUT"><shadow type="event_broadcast_menu">${msg}</shadow></value>`)))
+    + top(chain(b('event_whenbroadcastreceived', msg), off, b('event_broadcast', `<value name="BROADCAST_INPUT"><shadow type="event_broadcast_menu">${msg}</shadow></value>`)), 300));
+  const t0 = performance.now();
+  let beats = 0;
+  while (performance.now() - t0 < 200) { await sleep(0); beats++; }
+  const storm = offs();
+  vm.stop();
+  await sleep(30);
+  check('a storm of broadcasts: the page keeps running and stop() ends it', beats > 5 && storm > 1000 && offs() - storm < 5 && !vm.running, `timers ${beats}, passes ${storm} then ${offs()}`);
+
+  /* ---------- Control, data, events, operators ---------- */
+  const tf = (lhs, rhs, then, other) => b('control_if_else',
+    `<value name="CONDITION"><block type="operator_lt">${text('OPERAND1', lhs)}${text('OPERAND2', rhs)}</block></value>`
+    + `<statement name="SUBSTACK">${inner(say2(then))}</statement><statement name="SUBSTACK2">${inner(say2(other))}</statement>`);
+  await run(start(tf('1', '2', 'yes', 'no')));
+  check('if/else: true branch', says().join() === 'yes', says().join());
+  await run(start(tf('2', '1', 'yes', 'no')));
+  check('if/else: false branch', says().join() === 'no', says().join());
+  await run(start(b('control_if', `<value name="CONDITION"><block type="operator_gt">${text('OPERAND1', '9')}${text('OPERAND2', '10')}</block></value>${stack(say2('never'))}`), say2('after')));
+  check('if: numbers compare as numbers', says().join() === 'after', says().join());
+  await run(start(
+    b('data_setvariableto', xv + text('VALUE', '0')),
+    b('control_repeat_until', `<value name="CONDITION"><block type="operator_equals"><value name="OPERAND1"><block type="data_variable">${xv}</block></value>${text('OPERAND2', '4')}</block></value>`
+      + stack(b('data_changevariableby', xv + number('VALUE', 1)))),
+    say(b('data_variable', xv))));
+  check('repeat until + variable', says().join() === '4', says().join());
+
+  // Variables and lists.
+  await run(start(b('data_setvariableto', xv + text('VALUE', '5')), b('data_changevariableby', xv + number('VALUE', 2)), say(b('data_variable', xv))));
+  check('variable: set and change', says().join() === '7', says().join());
+  await run(start(say(b('data_variable', xv))));
+  check('variable: starts from 0 on every run', says().join() === '0', says().join());
+  await run(start(
+    b('data_addtolist', xl + text('ITEM', 'a')), b('data_addtolist', xl + text('ITEM', 'b')),
+    b('data_insertatlist', xl + number('INDEX', 2) + text('ITEM', 'c')),
+    b('data_replaceitemoflist', xl + number('INDEX', 1) + text('ITEM', 'z')),
+    say(b('data_listcontents', xl)), say(b('data_lengthoflist', xl)),
+    say(b('data_itemoflist', xl + number('INDEX', 2))), say(b('data_itemnumoflist', xl + text('ITEM', 'b'))),
+    say(b('data_listcontainsitem', xl + text('ITEM', 'q'))),
+    b('data_deleteoflist', xl + number('INDEX', 1)), say(b('data_listcontents', xl)),
+    b('data_deletealloflist', xl), say(b('data_lengthoflist', xl))));
+  check('lists: all operations', says().join('|') === 'z c b|3|c|3|false|c b|0', says().join('|'));
+
+  // Broadcast.
+  const cast = (type) => b(type, `<value name="BROADCAST_INPUT"><shadow type="event_broadcast_menu">${msg}</shadow></value>`);
+  await run(start(say2('a'), cast('event_broadcast'), say2('b')) + top(chain(b('event_whenbroadcastreceived', msg), say2('heard')), 300));
+  check('broadcast: reaches the hat', says().sort().join() === 'a,b,heard', says().join());
+  await run(start(cast('event_broadcastandwait'), say2('after')) + top(chain(b('event_whenbroadcastreceived', msg), say2('one'), say2('two')), 300));
+  check('broadcast and wait: waits for the hat', says().join() === 'one,two,after', says().join());
+
+  // My block.
+  const proto = '<mutation proccode="круг" argumentids="[]" argumentnames="[]" argumentdefaults="[]" warp="false"></mutation>';
+  const define = b('procedures_definition', `<statement name="custom_block"><shadow type="procedures_prototype">${proto}</shadow></statement>`);
+  const call = b('procedures_call', '<mutation proccode="круг" argumentids="[]" warp="false"></mutation>');
+  await run(start(say2('before'), call, say2('after')) + top(chain(define, say2('body')), 300));
+  check('my block: call runs the definition', says().join() === 'before,body,after', says().join());
+  await run(start(call, say2('never')) + top(chain(define, call), 300));
+  check('my block: endless self-call stops with a note', !vm.running && !says().length && toasts.length === 1, JSON.stringify(toasts));
+
+  // Operators, each reporter through the hub text.
+  const op = (type, inner2) => say(b(type, inner2));
+  const math = (o, n) => op('operator_mathop', `<field name="OPERATOR">${o}</field>${number('NUM', n)}`);
+  const cases = [
+    [op('operator_add', two(2, 3)), '5'], [op('operator_subtract', two(2, 3)), '-1'], [op('operator_multiply', two(2, 3)), '6'],
+    [op('operator_divide', two(3, 2)), '1.5'], [op('operator_mod', two(-1, 4)), '3'], [op('operator_round', number('NUM', 2.5)), '3'],
+    [math('abs', -4), '4'], [math('floor', 1.7), '1'], [math('ceiling', 1.2), '2'], [math('sqrt', 9), '3'], [math('sin', 90), '1'], [math('cos', 180), '-1'],
+    [op('operator_join', text('STRING1', 'ab') + text('STRING2', 'cd')), 'abcd'], [op('operator_letter_of', number('LETTER', 2) + text('STRING', 'abc')), 'b'],
+    [op('operator_length', text('STRING', 'hello')), '5'], [op('operator_contains', text('STRING1', 'Apple') + text('STRING2', 'pp')), 'true'],
+    [op('operator_equals', text('OPERAND1', 'ДА') + text('OPERAND2', 'да')), 'true'], [op('operator_gt', text('OPERAND1', '10') + text('OPERAND2', '9')), 'true'],
+    [op('flipperoperator_isInBetween', number('VALUE', 5) + number('LOW', -10) + number('HIGH', 10)), 'true'],
+    [op('flipperoperator_isInBetween', number('VALUE', 11) + number('LOW', -10) + number('HIGH', 10)), 'false'],
+    [op('operator_not', ''), 'true'],
+    [op('operator_and', `<value name="OPERAND1"><block type="operator_not"></block></value><value name="OPERAND2"><block type="operator_not"></block></value>`), 'true'],
+    [op('operator_or', ''), 'false'],
+  ];
+  await run(start(...cases.map((c) => c[0])));
+  const want = cases.map((c) => c[1]).join();
+  check('operators: ' + cases.length + ' reporters', says().join() === want, says().join() + ' ≠ ' + want);
+  await run(start(op('operator_random', number('FROM', 3) + number('TO', 3))));
+  check('operators: random', says().join() === '3', says().join());
+
+  /* ---------- Ports, motors, the colour sensor ---------- */
+  const MOTORS = 'Моторы колёс в портах C и D, мотор шестерни в порту E.';
+  const turnOn = (p) => b('flippermotor_motorStartDirection', port(p) + '<field name="DIRECTION">clockwise</field>');
+  await run(start(turnOn('B'), turnOn('B'), turnOn('A'), say2('still here')));
+  check('motor block on the sensor port and on an empty one: one friendly warning each', toasts.map((x) => x.join()).join('|')
+    === `В порту B датчик цвета, а не мотор. ${MOTORS},warn|В порту A ничего нет. ${MOTORS},warn`, JSON.stringify(toasts));
+  check('wrong port: no motor call, program goes on', !calls.some((c) => c[0].endsWith('.run')) && says().join() === 'still here');
+  await run(start(turnOn('B')));
+  check('wrong port: warns again on the next run', toasts.length === 1, JSON.stringify(toasts));
+  Object.assign(state, { color: 9, reflected: 42.4 });
+  await run(start(say(b('flippersensors_color', port('A', 'sensing'))), say(b('flippersensors_reflectivity', port('A', 'sensing'))),
+    say(b('flippersensors_isPressed', port('D', 'sensing') + '<field name="OPTION">pressed</field>')), say(b('flippersensors_force', port('D', 'sensing') + '<field name="UNIT">newton</field>')),
+    say(b('flippersensors_distance', port('B', 'sensing') + '<field name="UNIT">cm</field>')),
+    say(b('flippersensors_isDistance', port('B', 'sensing') + '<field name="COMPARATOR">closer</field>' + number('VALUE', 15) + '<field name="UNIT">cm</field>'))));
+  check('colour block on a wrong port names port B; force and distance blocks say the robot has no such sensor', says().join() === '-1,0,false,0,0,false'
+    && toasts.map((x) => x[0]).join('|') === 'В порту A нет датчика цвета. Датчик цвета подключён к порту B.|У этого робота нет датчика силы.|У этого робота нет датчика расстояния.',
+    says().join() + JSON.stringify(toasts));
+  await begin(top(chain(b('flipperevents_whenPressed', port('D', 'events') + '<field name="OPTION">pressed</field>'), say2('never'))));
+  await ticks(5);
+  check('force hat: one warning, never fires', toasts.length === 1 && toasts[0][0] === 'У этого робота нет датчика силы.' && !says().length, JSON.stringify(toasts));
+  vm.stop();
+
+  // Single motors: a block's port picks the motor (E turns the gear); start resets every speed to 75 %.
+  const portE = port('E');
+  await run(start(
+    b('flippermotor_motorSetSpeed', portE + number('SPEED', 40)),
+    b('flippermotor_motorTurnForDirection', portE + '<field name="DIRECTION">counterclockwise</field><field name="UNIT">degrees</field>' + number('VALUE', 90)),
+    b('flippermotor_motorTurnForDirection', portE + '<field name="DIRECTION">clockwise</field><field name="UNIT">rotations</field>' + number('VALUE', 2)),
+    b('flippermotor_motorTurnForDirection', portE + '<field name="DIRECTION">clockwise</field><field name="UNIT">seconds</field>' + number('VALUE', 0.05)),
+    b('flippermotor_motorGoDirectionToPosition', portE + '<field name="DIRECTION">shortest</field>' + number('POSITION', 270)),
+    b('flippermotor_motorStartDirection', portE + '<field name="DIRECTION">counterclockwise</field>'),
+    b('flippermotor_motorStop', portE),
+    say(b('flippermotor_absolutePosition', portE)), say(b('flippermotor_absolutePosition', port('C'))), say(b('flippermotor_speed', portE))));
+  check('motor E: speed and all moves, the wheels stay out of it', did('E.runFor', -90, 40) && did('E.runFor', 720, 40) && did('E.runForSeconds', 0.05, 40, 1)
+    && did('E.goTo', 270, 'shortest', 40) && did('E.run', 40, -1) && seen('E.stop').length && !calls.some((c) => /^[CD]\.(run|goTo)/.test(c[0])));
+  check('motor: reporters, 270 by the shortest path reads −90', says().join() === '-90,0,0', says().join());
+  await begin(start(turnOn('E')));
+  await ticks(3);
+  check('a single motor left running keeps the program going too', vm.running && did('E.run', 75, 1));
+  load(start(off));
+  hw.motors.C.defaultSpeed = 40;
+  vm.start();
+  check('start: every motor back to 75 %', ['C', 'D', 'E'].every((p) => hw.motors[p].defaultSpeed === 75), JSON.stringify(Object.values(hw.motors).map((m) => m.defaultSpeed)));
+  vm.stop();
+
+  // The colour sensor in B: SPIKE's codes, reflected light in whole %.
+  const portB = port('B', 'sensing');
+  const isC = (code) => say(b('flippersensors_isColor', portB + menu('VALUE', 'sensing_color', code)));
+  const refl = (cmp, n) => say(b('flippersensors_isReflectivity', portB + `<field name="COMPARATOR">${cmp}</field>` + number('VALUE', n)));
+  await run(start(isC(9), isC(5), say(b('flippersensors_color', portB)), say(b('flippersensors_reflectivity', portB)), refl('lt', 50), refl('gt', 50), refl('eq', 42)));
+  check('colour: red yes, green no, code 9, light 42 % and < > =', says().join() === 'true,false,9,42,true,false,true' && !toasts.length, says().join());
+  state.color = 0;
+  await run(start(isC(0), isC(10), isC(-1)));
+  check('colour: black is 0, neither white nor «нет цвета»', says().join() === 'true,false,false', says().join());
+  const whenC = (code) => top(chain(b('flipperevents_whenColor', port('B', 'events') + menu('OPTION', 'events_color', code)), say2('c' + code)));
+  state.color = 9;
+  await begin(whenC(9));
+  await ticks(5);
+  const atStart = says().length;
+  state.color = 10; await ticks(5);
+  state.color = 9; await ticks(5);
+  state.color = 5; await ticks(5);
+  check('colour hat: fires when red comes, not for the red already under the sensor', atStart === 0 && says().join() === 'c9', atStart + ' ' + says().join());
+  vm.stop();
+  Object.assign(state, { color: 10, reflected: 95 });
+
+  /* ---------- Hub: display, sound, tilt, buttons ---------- */
+  const matrix = 'flipperlight_lightDisplayImageOnForTime';
+  await begin(start(
+    b(matrix, v('MATRIX', '<shadow type="matrix"><field name="MATRIX">1000000000000000000000001</field></shadow>') + number('VALUE', 0.05)),
+    b('flipperlight_lightDisplaySetBrightness', number('BRIGHTNESS', 50)),
+    b('flipperlight_lightDisplaySetPixel', number('X', 2) + number('Y', 3) + number('BRIGHTNESS', 100)),
+    b('flipperlight_lightDisplayRotate', '<field name="DIRECTION">counterclockwise</field>'),
+    b('flipperlight_centerButtonLight', menu('COLOR', 'light_colour', '#00C040')),
+    b('flippersound_beepForTime', v('NOTE', '<shadow type="note"><field name="NOTE">72</field></shadow>') + number('DURATION', 0.01)),
+    b('flippersound_playSoundUntilDone', menu('SOUND', 'sounds_sound', 'Laser')),
+    b('sound_setvolumeto', number('VOLUME', 60)), b('sound_changevolumeby', number('VOLUME', -10)), say(b('sound_volume')),
+    b('sound_seteffectto', '<field name="EFFECT">PITCH</field>' + number('VALUE', 100))));
+  await ticks(4);
+  const shown = offs();
+  await finished();
+  const img = seen('setImage')[0];
+  check('display: picture of 25 values for 0.05 s of the simulated clock, then clear', img && img[1].length === 25 && img[1][0] === 100 && img[1][1] === 0 && shown === 0 && offs() === 1, shown + ' ' + offs());
+  check('display: pixel, brightness, rotate, centre light', did('setPixel', 2, 3, 100) && did('setBrightness', 50) && did('rotate', -1) && did('centerLight', '#00C040'));
+  check('sound: beep, sound, volume, effect', did('beep', 72, 0.01) && did('play', 'Laser', true) && says().join() === '50' && did('setEffect', 'pitch', 100));
+  hw.sound.volume = 100;
+  await run(start(say(b('flippersensors_orientationAxis', '<field name="AXIS">yaw</field>')), b('flippersensors_resetYaw'), say(b('flippersensors_isorientation', '<field name="VALUE">top</field>'))));
+  check('hub: yaw angle, reset yaw, top side up', says().join() === '15,true' && seen('resetYaw').length === 1, says().join());
+  await begin(top(chain(b('flipperevents_whenTilted', menu('VALUE', 'events_tilt', 'left')), say2('tilt'))));
+  for (const on of [false, true, false, true, false]) { state.tilted = on; await ticks(4); }
+  check('hat: tilt fires on each rising edge', says().length === 2, says().join());
+  await begin(top(chain(b('flipperevents_whenGesture', '<field name="EVENT">shake</field>'), say2('shook'))));
+  await ticks(3);
+  state.gesture = true;
+  vm.dispatch({ type: 'gesture', name: 'shake' });
+  await ticks(6);
+  state.gesture = false;
+  check('hat: gesture fires once for one shake', says().length === 1, says().join());
+  await begin(top(chain(b('flipperevents_whenCondition', cond(b('flippersensors_isorientation', '<field name="VALUE">top</field>'))), say2('up'))));
+  await ticks(10);
+  check('hat: condition fires once while true', says().length === 1, says().join());
+  vm.stop();
+
+  // A re-triggered hat starts over, and stop options.
+  await begin(top(chain(b('flipperevents_whenButton', '<field name="BUTTON">left</field><field name="EVENT">pressed</field>'), say2('in'), wait(0.2), say2('out'))));
+  vm.dispatch({ type: 'button', side: 'left', state: 'pressed' });
+  await ticks(6);
+  vm.dispatch({ type: 'button', side: 'left', state: 'pressed' });
+  await ticks(6);
+  check('hat: re-trigger restarts the stack', says().join() === 'in,in', says().join());
+  await ticks(22);
+  check('hat: only the new run finishes', says().join() === 'in,in,out', says().join());
+  vm.stop();
+  // «остановить» is a cap, nothing snaps below it: a loop shows that its stack really ends there.
+  const stop = (what) => b('flippercontrol_stop', `<field name="STOP_OPTION">${what}</field>`);
+  const other = top(chain(b('flipperevents_whenProgramStarts'), wait(0.1), say2('other')), 300);
+  await run(start(b('control_forever', stack(say2('a'), stop('exit')))) + other);
+  check('stop: exit ends the program', !vm.running && says().join() === 'a' && seen('reset').length > 0, says().join());
+  await run(start(b('control_forever', stack(say2('a'), stop('this')))) + other);
+  check('stop: this stack ends, the other one goes on', !vm.running && says().join() === 'a,other', says().join());
+  await run(start(cd, startMove('forward'), stop('all')) + other);
+  check('stop: all stops every stack and the motors', !vm.running && !says().length && seen('C.stop').length > 0, says().join() + ' running=' + vm.running);
+  await run(start(wait(0.05), b('flippercontrol_stopOtherStacks'), say2('winner')) + top(chain(b('flipperevents_whenProgramStarts'), b('control_forever', stack(off))), 300));
+  check('stop: other stacks', !vm.running && says().join() === 'winner', says().join());
+
+  /* ---------- The whole palette, and edits while running ---------- */
+  bl.workspace.clear();
+  const failures = [];
+  const logError2 = console.error;
+  console.error = (e) => failures.push(String(e));
+  const palette = bl.workspace.toolbox_.flyout_.workspace_.getTopBlocks(true);
+  for (const p of palette) {
+    const xml = Blockly.Xml.domToText(Blockly.Xml.blockToDom(p)).replace(/ xmlns="[^"]*"/, '').replace(/ id="[^"]*"/g, '');
+    const program = p.outputConnection ? start({ type: 'flipperlight_lightDisplayText', inner: `<value name="TEXT">${xml}</value>` })
+      : p.previousConnection ? start({ type: 'control_if', inner: '' }).replace('</block></next>', `<next>${xml}</next></block></next>`)
+      : top(xml);
+    await begin(program);
+    await ticks(3);
+    vm.stop();
+  }
+  console.error = logError2;
+  check(`palette: all ${palette.length} blocks run with their default values`, palette.length > 85 && !failures.length, palette.length + ' ' + failures.join(' | '));
+
+  load('');
+  vm.start();
+  check('empty workspace: says so and does not run', !vm.running && toasts.length === 1, JSON.stringify(toasts));
+
+  await begin(start(b('control_forever', stack(off))));
+  await ticks(3);
+  const errors = [];
+  const logError = console.error;
+  console.error = (e) => errors.push(e);
+  bl.workspace.getTopBlocks(false)[0].dispose(false, false);
+  await ticks(3);
+  const left = offs();
+  await ticks(8);
+  console.error = logError;
+  check('deleting a running stack ends it quietly', !errors.length && offs() === left && !vm.running, `${errors} ${left} ${offs()}`);
+  vm.stop();
+  check('no uncaught error during the whole check', !crashes.length, crashes.join(' | '));
+
+  RA.$('#sum').textContent = bad ? `FAIL: ${bad} из ${good + bad}` : `PASS: ${good} из ${good}`;
+  document.title = bad ? 'FAIL' : 'PASS';
+  console.log(RA.$('#sum').textContent);
+})().catch((e) => {
+  document.title = 'FAIL';
+  RA.$('#sum').textContent = 'FAIL: ' + e.message;
+  console.error(e);
+});
+</script>
+</body>
+</html>

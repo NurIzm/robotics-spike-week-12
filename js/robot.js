@@ -89,6 +89,7 @@
   const head = (x0, x1, z0, z1, r) => {
     const s = new T.Shape();
     s.moveTo(x0, z0);
+    s.lineTo(x1 - r, z0);   // an arc right after a bare moveTo drops the moveTo point, and the outline then cuts this corner off
     s.absarc(x1 - r, z0 + r, r, -Q, 0);
     s.absarc(x1 - r, z1 - r, r, 0, Q);
     s.lineTo(x0, z1);

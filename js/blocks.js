@@ -1,6 +1,8 @@
 // Block language: the SPIKE Prime palette on top of scratch-blocks. One table row per block, see CATS.
 (function () {
   const RA = window.RA;
+  // Blockly's icons sit next to this script, so the Kazakh copy in kk/ finds them too.
+  const MEDIA = new URL('../vendor/media/', document.currentScript.src).href;
 
   // Russian strings first, SPIKE's exact wording on top. Built-in blocks read these in their init().
   Object.assign(Blockly.Msg, Blockly.ScratchMsgsRu, {
@@ -513,7 +515,7 @@
     const d = document.createElement('dialog');
     d.className = 'raDialog';
     d.innerHTML = `<form method="dialog"><h3></h3><label><span></span>${value === undefined ? '' : '<input maxlength="40" autocomplete="off">'}</label>`
-      + `<div class="raDialog__row">${cancel ? '<button class="btn" type="button">Отмена</button>' : ''}<button class="btn btn--primary" value="ok">ОК</button></div></form>`;
+      + `<div class="raDialog__row">${cancel ? '<button class="btn" type="button">' + (document.documentElement.lang === 'kk' ? 'Болдырмау' : 'Отмена') + '</button>' : ''}<button class="btn btn--primary" value="ok">ОК</button></div></form>`;
     d.querySelector('h3').textContent = title;
     d.querySelector('span').textContent = text;
     const input = d.querySelector('input');
@@ -537,9 +539,9 @@
     d.showModal();
     if (input) input.select();
   }
-  Blockly.alert = (text, cb) => dialog({ title: 'По линии', text }, () => { if (cb) cb(); });
-  Blockly.confirm = (text, cb) => dialog({ title: 'По линии', text, cancel: true }, (ok) => cb(ok));
-  Blockly.prompt = (text, value, cb, title) => dialog({ title: title || 'По линии', text, value, cancel: true }, (ok, v) => cb(ok ? v : null));
+  Blockly.alert = (text, cb) => dialog({ title: document.title, text }, () => { if (cb) cb(); });
+  Blockly.confirm = (text, cb) => dialog({ title: document.title, text, cancel: true }, (ok) => cb(ok));
+  Blockly.prompt = (text, value, cb, title) => dialog({ title: title || document.title, text, value, cancel: true }, (ok, v) => cb(ok ? v : null));
   // scratch-blocks also calls a bare alert() in two places, e.g. on deleting a used custom block.
   window.alert = (text) => Blockly.alert(text);
 
@@ -575,7 +577,7 @@
     Blockly.VerticalFlyout.prototype.DEFAULT_WIDTH = container.clientWidth < 600 ? 170 : 250;
     Blockly.Toolbox.prototype.width = 62 + Blockly.VerticalFlyout.prototype.DEFAULT_WIDTH;
     const workspace = Blockly.inject(container, {
-      media: o.media || 'vendor/media/', toolbox: TOOLBOX, sounds: false, comments: false, trashcan: false, collapse: false, scrollbars: true,
+      media: o.media || MEDIA, toolbox: TOOLBOX, sounds: false, comments: false, trashcan: false, collapse: false, scrollbars: true,
       zoom: { controls: false, wheel: true, startScale: 0.675 },
       grid: { spacing: 30, length: 2, colour: '#D9D9D9' },
       colours: {

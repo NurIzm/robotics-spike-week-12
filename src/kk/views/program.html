@@ -1,0 +1,104 @@
+<div class="prog" id="prog">
+  <section class="prog__left" aria-label="Блоктардан құралған бағдарлама">
+    <div class="tasks">
+      <div class="tasks__tabs" id="task-tabs"></div>
+      <p class="tasks__goal" id="task-goal"></p>
+      <p class="tasks__hint" id="task-hint" hidden></p>
+      <div class="probe" id="probe" hidden>
+        <dl class="probe__cells">
+          <div><dt>Ақ түсте</dt><dd id="probe-white">…</dd></div>
+          <div><dt>Қара түсте</dt><dd id="probe-black">…</dd></div>
+          <div><dt>Шекарада</dt><dd id="probe-border">…</dd></div>
+        </dl>
+        <label class="probe__thr"><span>Шек</span><input id="probe-thr" type="number" min="0" max="100" step="1" inputmode="numeric" autocomplete="off"><span>%</span></label>
+      </div>
+      <table class="tasks__table" id="task-table" hidden></table>
+      <div class="tasks__row">
+        <p class="tasks__status" id="task-status" role="status"></p>
+        <div class="tasks__acts">
+          <button type="button" class="tasks__act" id="task-hint-btn" aria-expanded="false">Кеңес</button>
+          <button type="button" class="tasks__act" id="task-solution">Шешімін көрсету</button>
+          <button type="button" class="tasks__act" id="task-restart">Қайтадан бастау</button>
+        </div>
+      </div>
+    </div>
+    <div class="prog__ws">
+      <div class="prog__blockly" id="prog-blockly"></div>
+      <div class="prog__tools" id="prog-tools">
+        <button type="button" data-tool="fit" aria-label="Барлық блокты көрсету" title="Барлық блокты көрсету">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l6 6m0-4.5V9H4.5M21 3l-6 6m0-4.5V9h4.5M3 21l6-6m0 4.5V15H4.5M21 21l-6-6m0 4.5V15h4.5"/></svg>
+        </button>
+        <button type="button" data-tool="out" aria-label="Кішірейту" title="Кішірейту">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7.5"/><path d="M6.5 10.5h8M16 16l5.5 5.5"/></svg>
+        </button>
+        <button type="button" data-tool="in" aria-label="Үлкейту" title="Үлкейту">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7.5"/><path d="M6.5 10.5h8M10.5 6.5v8M16 16l5.5 5.5"/></svg>
+        </button>
+        <span class="prog__toolgap"></span>
+        <button type="button" data-tool="undo" aria-label="Болдырмау" title="Болдырмау">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 5 4 9.5 8.5 14M4.5 9.5H15a5.5 5.5 0 0 1 0 11h-3"/></svg>
+        </button>
+        <button type="button" data-tool="redo" aria-label="Қайталау" title="Қайталау">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 5 20 9.5 15.5 14M19.5 9.5H9a5.5 5.5 0 0 0 0 11h3"/></svg>
+        </button>
+      </div>
+      <div class="prog__run">
+        <button type="button" class="prog__round prog__round--stop" id="prog-stop" aria-label="Бағдарламаны тоқтату" title="Тоқтату">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+        </button>
+        <button type="button" class="prog__round prog__round--play" id="prog-play" aria-label="Бағдарламаны іске қосу" title="Іске қосу">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.2v15.6a1 1 0 0 0 1.5.86l12.4-7.8a1 1 0 0 0 0-1.72L8.5 3.34A1 1 0 0 0 7 4.2z"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <div class="prog__split" id="prog-split" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Блоктар мен алаң арасындағы шекара. Сол және оң нұсқар пернелері оны жылжытады."></div>
+
+  <section class="prog__right" aria-label="Алаңдағы робот">
+    <div class="prog__stage" id="prog-stage">
+      <div class="fieldbar" role="group" aria-label="Алаң және робот">
+        <button type="button" id="view-btn">Бүкіл алаң</button>
+        <button type="button" id="trail-btn" aria-pressed="true">Із</button>
+        <button type="button" id="turn-left" class="fieldbar__turn" aria-label="Роботты солға бұру" title="Солға бұру: ← нұсқары">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.6 7.2A7 7 0 1 1 6 13.5M8.8 2.8v4.6H4.2"/></svg>
+        </button>
+        <button type="button" id="turn-right" class="fieldbar__turn" aria-label="Роботты оңға бұру" title="Оңға бұру: → нұсқары">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.4 7.2A7 7 0 1 0 18 13.5M15.2 2.8v4.6h4.6"/></svg>
+        </button>
+      </div>
+      <button type="button" class="home" id="prog-home">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 4l8 7.5M6.5 10v9.5h11V10"/></svg>Стартқа
+      </button>
+    </div>
+    <div class="hubp">
+      <div class="hubp__hub">
+        <div class="hubp__leds" id="hub-leds" role="img" aria-label="Хаб экраны, 5 × 5 шам"></div>
+        <div class="hubp__pill">
+          <button type="button" id="hub-left" aria-label="Хабтың сол жақ батырмасы"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 12l9-6v12z"/></svg></button>
+          <button type="button" id="hub-center" class="hubp__center" aria-label="Ортаңғы батырма: іске қосу және тоқтату"></button>
+          <button type="button" id="hub-right" aria-label="Хабтың оң жақ батырмасы"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 12 8 6v12z"/></svg></button>
+        </div>
+      </div>
+      <div class="lens">
+        <p class="lens__name">Түс датчигі, B порты</p>
+        <p class="lens__read"><b id="lens-pct">0</b> % <span class="lens__what">шағылған жарық</span></p>
+        <div class="lens__bar" aria-hidden="true"><i class="lens__mark"></i><i class="lens__needle" id="lens-needle"></i></div>
+        <p class="lens__color"><i class="lens__swatch" id="lens-swatch"></i><span id="lens-color">ақ</span> <span class="lens__what">түс</span></p>
+      </div>
+      <div class="ports">
+        <table class="ports__motors">
+          <tr><td></td><th scope="col">бұрыш</th><th scope="col">жылдамдық</th><th scope="col">қуат</th></tr>
+          <tr><th scope="row">C</th><td><b id="read-C-angle">0</b>°</td><td><b id="read-C-speed">0</b>%</td><td><b id="read-C-power">0</b>%</td></tr>
+          <tr><th scope="row">D</th><td><b id="read-D-angle">0</b>°</td><td><b id="read-D-speed">0</b>%</td><td><b id="read-D-power">0</b>%</td></tr>
+          <tr><th scope="row">E</th><td><b id="read-E-angle">0</b>°</td><td><b id="read-E-speed">0</b>%</td><td><b id="read-E-power">0</b>%</td></tr>
+        </table>
+        <dl class="ports__run">
+          <div><dt>Уақыт</dt><dd><b id="run-time">0,0</b> с</dd></div>
+          <div><dt>Жол</dt><dd><b id="run-dist">0</b> см</dd></div>
+          <div><dt>Айналым</dt><dd><b id="run-laps">0</b></dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+</div>

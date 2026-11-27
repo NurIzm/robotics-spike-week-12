@@ -3,7 +3,7 @@
 // Usage: node src/kk/code-check.js   Prints each difference with the lines in both files; exit code 1 if there is any.
 const fs = require('fs'), path = require('path');
 const ROOT = path.join(__dirname, '..', '..');
-const FILES = ['blocks', 'core', 'examples', 'lesson', 'program', 'robot', 'scenes', 'sim', 'vm'];
+const FILES = ['core', 'examples', 'lesson', 'program', 'robot', 'scenes', 'sim', 'vm'];
 
 // The only code the copy may change, as [Russian code, Kazakh code], compared as tokens (strings are placeholders).
 // blocks.js: as week 10's copy. msg_kk.js defines ScratchMsgsKk; Kazakh fixes on top of Scratch's own Kazakh strings;

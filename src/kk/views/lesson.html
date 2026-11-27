@@ -1,0 +1,473 @@
+<div class="les">
+
+<svg class="les-defs" aria-hidden="true">
+  <symbol id="les-ico-colour" viewBox="0 0 48 48"><rect x="6" y="6" width="36" height="36" rx="5" fill="#fff" stroke="currentColor" stroke-width="1.5"/><circle cx="24" cy="24" r="13.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="24" cy="24" r="9.5" fill="currentColor"/></symbol>
+  <symbol id="les-ico-move" viewBox="0 0 48 48"><circle cx="17" cy="24" r="14.5" fill="#fff" stroke="currentColor" stroke-width="1.5"/><circle cx="31" cy="24" r="14.5" fill="#fff" stroke="currentColor" stroke-width="1.5"/><circle cx="17" cy="24" r="5" fill="currentColor"/><circle cx="31" cy="24" r="5" fill="currentColor"/></symbol>
+  <symbol id="les-ico-play" viewBox="0 0 48 48"><path d="M17 13 35 24 17 35z" fill="#fff" stroke="#fff" stroke-width="3.5" stroke-linejoin="round"/></symbol>
+  <!-- Week 9's Роборука from the side: hub, frame, motor, two fingers with tyres. -->
+  <symbol id="les-pic-arm" viewBox="0 0 230 92">
+    <rect x="6" y="22" width="66" height="48" rx="5" fill="#eceded" stroke="#10202a" stroke-width="2"/>
+    <rect x="6" y="22" width="66" height="9" rx="4" fill="#fed920"/>
+    <circle cx="20" cy="50" r="5" fill="#fff" stroke="#c92e85" stroke-width="3"/>
+    <circle cx="60" cy="52" r="7" fill="#fff" stroke="#10202a" stroke-width="2"/>
+    <rect x="79" y="25" width="60" height="42" rx="5" fill="none" stroke="#c92e85" stroke-width="9"/>
+    <rect x="143" y="33" width="20" height="26" rx="3" fill="#01adc4"/>
+    <rect x="161" y="35" width="13" height="22" rx="3" fill="#eceded" stroke="#10202a" stroke-width="2"/>
+    <path d="M172 40l26-26M172 52l26 26" stroke="#16151a" stroke-width="7" fill="none"/>
+    <circle cx="207" cy="14" r="10" fill="#16151a"/>
+    <circle cx="207" cy="78" r="10" fill="#16151a"/>
+  </symbol>
+  <!-- #les-bot, the robot seen from above, is drawn by js/lesson.js from the model's own sizes. -->
+</svg>
+
+<header class="les-head">
+  <div>
+    <p class="les-head__kicker">Сабақ: қара сызық бойымен жүру. Түс датчигі</p>
+    <h1>Манипулятор&shy;лар және автономия</h1>
+  </div>
+  <div class="les-head__mid">
+    <p class="les-head__goal"><b>Мақсаты</b> Түс датчигінің шағылған жарық режиміндегі жұмысын зерттеу. Сызық бойымен жүру алгоритмін жазу.</p>
+    <dl class="les-head__facts">
+      <div><dt>Уақыты</dt><dd>1&nbsp;сағат</dd></div>
+      <div><dt>Жұмыс түрі</dt><dd>Құрастыру және бөлшектеу</dd></div>
+      <div><dt>Аптасы</dt><dd>12</dd></div>
+    </dl>
+  </div>
+  <nav class="les-route" aria-labelledby="les-route-title">
+    <h2 id="les-route-title">Нені үйренеміз</h2>
+    <ol>
+      <li><button type="button" data-to="les-was">Біз не білеміз</button></li>
+      <li><button type="button" data-to="les-bot">Біздің робот</button></li>
+      <li><button type="button" data-to="les-see">Датчик не көреді</button></li>
+      <li><button type="button" data-to="les-thr">Шек</button></li>
+      <li><button type="button" data-to="les-edge">Сызықтың шетімен</button></li>
+      <li><button type="button" data-to="les-code">Бағдарлама</button></li>
+      <li><button type="button" data-to="les-tune">Баптау</button></li>
+      <li><button type="button" data-to="les-smooth">Жұмсағырақ</button></li>
+      <li><button type="button" data-to="les-build">Құрастыру және бөлшектеу</button></li>
+      <li><button type="button" data-to="les-quiz">Шағын тест</button></li>
+    </ol>
+  </nav>
+</header>
+
+<section class="les-sec les-was" id="les-was" aria-labelledby="les-was-title">
+  <div>
+    <h2 id="les-was-title">Біз не білеміз</h2>
+    <p class="les-lead">Дөңгелекті платформаны біз бұрын құрастырып, жүруге үйреткенбіз. Бүгін оның төмен қарайтын көзі пайда болады.</p>
+  </div>
+  <div class="les-vs">
+    <article class="les-vs__col">
+      <svg class="les-vs__pic" viewBox="0 0 240 130" aria-hidden="true">
+        <rect x="96" y="20" width="100" height="90" rx="10" fill="none" stroke="#c92e85" stroke-width="4" stroke-dasharray="2 10" stroke-linecap="round"/>
+        <path d="M96 34l-8 13h16z" fill="#c92e85"/>
+        <use href="#les-bot" x="69" y="56" width="54" height="48"/>
+      </svg>
+      <h3><span>2–3-апталар</span> Маршрут бойынша жүреді</h3>
+      <dl>
+        <div><dt>Робот не істей алды</dt><dd>«Мобильді платформа 1» шаршы мен плюс бойымен жүрді.</dd></div>
+        <div><dt>Қайда жүретінін қалай шешті</dt><dd>Ешқалай. Бағдарламада бәрі алдын ала жазылған: алға пәлен айналым, сосын бұрылыс. Робот жолды көрмеді.</dd></div>
+      </dl>
+    </article>
+    <article class="les-vs__col">
+      <svg class="les-vs__pic" viewBox="0 0 240 130" aria-hidden="true">
+        <g transform="translate(66 65) rotate(90)"><use href="#les-bot" x="-27" y="-24" width="54" height="48"/></g>
+        <path d="M108 51a22 22 0 0 1 0 28M120 43a36 36 0 0 1 0 44M132 35a50 50 0 0 1 0 60" fill="none" stroke="#00adc4" stroke-width="4" stroke-linecap="round"/>
+        <rect x="158" y="34" width="40" height="62" rx="4" fill="#fed920" stroke="#10202a" stroke-width="2.5"/>
+        <rect x="208" y="34" width="20" height="18" rx="3" fill="#ff000c"/>
+        <rect x="208" y="56" width="20" height="18" rx="3" fill="#00a845"/>
+        <rect x="208" y="78" width="20" height="18" rx="3" fill="#0090f5"/>
+      </svg>
+      <h3><span>4–5-апталар</span> Датчиктермен танысады</h3>
+      <dl>
+        <div><dt>Робот не істей алды</dt><dd>Қашықтық датчигімен кедергілерді айналып өтті, түс датчигімен түстерге жауап берді.</dd></div>
+        <div><dt>Қайда жүретінін қалай шешті</dt><dd>Датчик кедергіні немесе түсті байқады, сонда бағдарлама қозғалысты өзгертті.</dd></div>
+      </dl>
+    </article>
+    <article class="les-vs__col">
+      <svg class="les-vs__pic" viewBox="0 0 230 92" aria-hidden="true"><use href="#les-pic-arm"/></svg>
+      <h3><span>9–11-апталар</span> Заттарды алады</h3>
+      <dl>
+        <div><dt>Робот не істей алды</dt><dd>Робот-қол, Қармауыштар және Қол басы бір орында тұрып, саусақтарын қысты.</dd></div>
+        <div><dt>Қашан қысатынын қалай шешті</dt><dd>Мұны батырма мен датчиктер айтып тұрды.</dd></div>
+      </dl>
+    </article>
+    <article class="les-vs__col les-vs__col--now">
+      <svg class="les-vs__pic" viewBox="0 0 240 130" aria-hidden="true">
+        <path d="M125 130V64C125 30 152 30 162 0" fill="none" stroke="#16151a" stroke-width="7.5"/>
+        <use href="#les-bot" x="87" y="46" width="54" height="48"/>
+        <circle cx="129" cy="52" r="6" fill="none" stroke="#fed920" stroke-width="3"/>
+      </svg>
+      <h3><span>12-апта, бүгін</span> Сызық бойымен жүреді</h3>
+      <dl>
+        <div><dt>Робот не істей алады</dt><dd>«Мобильді платформа 3» қара сызық бойымен өзі жүреді.</dd></div>
+        <div><dt>Қайда жүретінін қалай шешеді</dt><dd>Түс датчигі еденге қарап, сызықты көреді. Бағдарлама дөңгелектерді үнемі түзетіп отырады.</dd></div>
+      </dl>
+    </article>
+  </div>
+  <p class="les-sum"><b>Дөңгелектегі автономия.</b> Робот өзі жүреді, ал оны датчик жетелейді. Біз ереже жазамыз, ал әр сәтте қайда бұрылатынын бағдарлама шешеді.</p>
+</section>
+
+<section class="les-sec les-bot" id="les-bot" aria-labelledby="les-bot-title">
+  <div>
+    <h2 id="les-bot-title">Біздің робот</h2>
+    <p class="les-lead">Бұл — SPIKE қолданбасындағы «Мобильная платформа 3» моделі. Бөлікті бас: ол жарқын болып қалады, ал қалғанының бәрі бозарады. Модельді айналдыруға болады.</p>
+  </div>
+  <div class="les-bot__bench">
+    <div class="les-bot__stage" id="les-bot-stage" role="img" aria-label="Қара сызығы бар ақ парақтағы роботтың үш өлшемді моделі. Оны айналдыруға болады."></div>
+    <div class="les-bot__panel">
+      <div class="les-parts" id="les-parts" role="group" aria-label="Роботтың бөліктері"></div>
+      <div class="les-part" aria-live="polite">
+        <h3 id="les-part-name">Бүкіл робот</h3>
+        <p id="les-part-role">Хаб, үш мотор, екі дөңгелек және түс датчигі. Роботтың алдыңғы жағы — датчик тұрған жақ.</p>
+      </div>
+    </div>
+  </div>
+  <div class="les-bot__more">
+    <div class="les-bot__ports">
+      <h3>Порттар</h3>
+      <table class="les-tab les-ptab">
+        <thead><tr><th scope="col">Порт</th><th scope="col">Не қосылған</th><th scope="col">Не үшін</th></tr></thead>
+        <tbody>
+          <tr><th scope="row"><button type="button" class="les-port" data-part="wheelL" aria-label="C порты: сол дөңгелекті көрсету">C</button></th><td>Орташа мотор</td><td>Сол дөңгелекті айналдырады</td></tr>
+          <tr><th scope="row"><button type="button" class="les-port" data-part="wheelR" aria-label="D порты: оң дөңгелекті көрсету">D</button></th><td>Орташа мотор</td><td>Оң дөңгелекті айналдырады</td></tr>
+          <tr><th scope="row"><button type="button" class="les-port" data-part="tool" aria-label="E порты: үлкен моторды көрсету">E</button></th><td>Үлкен мотор</td><td>Құралдарға арналған тісті дөңгелекті айналдырады. Бүгін керек емес</td></tr>
+          <tr><th scope="row"><button type="button" class="les-port" data-part="sensor" aria-label="B порты: түс датчигін көрсету">B</button></th><td>Түс датчигі</td><td>Төмен қарап, сызықты көреді</td></tr>
+        </tbody>
+      </table>
+      <p class="les-bot__free">A және F порттары бос.</p>
+    </div>
+    <figure class="les-plan">
+      <div id="les-plan"></div>
+      <figcaption><b>Үстінен көрініс.</b> A, C және E порттары хабтың сол жағында, B, D және F порттары оң жағында. Роботтағы әріптер ненің қайда қосылғанын көрсетеді.</figcaption>
+    </figure>
+    <div class="les-bot__new">
+      <h3>Датчик қайда</h3>
+      <p>Түс датчигі алдыңғы жақта, оң жақтағы қара арқалықтың астында ілулі тұр. Оның көзі төмен қарайды, еденге дейін шамамен <span data-geo="h">16</span> мм. Ол дөңгелектер білігінен <span data-geo="x">48</span> мм алда және роботтың ортасынан <span data-geo="z">40</span> мм оң жақта.</p>
+      <p>Робот бұрылғанда, дөңгелектердің алдындағы датчик бүйірге ауысады. Осылай дөңгелектер оны сызыққа жақындатады және сызықтан алыстатады.</p>
+      <h3>Жаңасы не</h3>
+      <p>Платформаны біз 2–3-апталарда құрастырдық, ол «Мобильная платформа 1» деп аталатын. «Мобильная платформа 3» моделінің негізі де сол, тек бір жаңа модуль қосылған: түс датчигі.</p>
+    </div>
+  </div>
+</section>
+
+<section class="les-sec les-see" id="les-see" aria-labelledby="les-see-title">
+  <div>
+    <h2 id="les-see-title">Датчик сызықты қалай көреді</h2>
+    <p class="les-lead">Датчик төменге өзінің ақ жарығын түсіреді де, қанша жарық қайтып келгенін өлшейді. Бұл — шағылған жарық режимі. Ақ қағаз жарықтың бәрін дерлік қайтарады, ал қара таспа ештеңе қайтармайды дерлік.</p>
+  </div>
+  <figure class="les-see__fig">
+    <svg class="les-see__svg" id="les-see-svg" viewBox="0 0 720 204" tabindex="0" role="slider" aria-label="Жолақ үстіндегі түс датчигі. Сол және оң нұсқарлар оны жылжытады" aria-valuemin="0" aria-valuemax="100">
+      <g id="les-see-strip"></g>
+      <circle class="les-see__spot" id="les-see-spot" cy="146" r="12"/>
+      <g id="les-see-head">
+        <path class="les-see__grip" d="M-8 12l-9 7 9 7zM8 12l9 7-9 7z"/>
+        <rect class="les-see__beam" x="-40" y="30" width="80" height="16" rx="8"/>
+        <path class="les-see__holes" d="M-32 38h.01M-16 38h.01M0 38h.01M16 38h.01M32 38h.01"/>
+        <rect class="les-see__body" x="-24" y="46" width="48" height="36" rx="4"/>
+        <rect class="les-see__lens" x="-24" y="78" width="48" height="12" rx="3"/>
+        <path class="les-see__cone" d="M-5 90h10l7 56h-24z"/>
+        <path class="les-see__back" id="les-see-back"/>
+        <path class="les-see__dim" d="M-38 90v32M-43 90h10M-43 122h10"/>
+        <text class="les-see__dimtxt" x="-48" y="111"><tspan data-geo="h">16</tspan> мм</text>
+      </g>
+    </svg>
+    <figcaption>Датчикті жолақ бойымен тінтуірмен, саусақпен немесе пернетақтадағы нұсқарлармен жүргіз. Сары — датчиктің жарығы, қызғылт көрсеткі — қайтып келген жарық. Аспап 50 көрсететін жерді тап.</figcaption>
+  </figure>
+  <div class="les-see__out">
+    <div class="les-mode">
+      <p class="les-mode__name">«отражённый свет» режимі</p>
+      <div class="les-prog" aria-hidden="true"><span class="blk blk--round blk--sensor"><svg class="blk__ico"><use href="#les-ico-colour"/></svg><span class="blk__pill">B</span>отражённый свет</span></div>
+      <p class="les-mode__val"><output id="les-see-num">95</output> %</p>
+      <div class="les-bar" id="les-see-bar"><i></i></div>
+      <p class="les-mode__hint">Жауабы — 0-ден 100 %-ға дейінгі сан.</p>
+    </div>
+    <div class="les-mode">
+      <p class="les-mode__name">«цвет» режимі</p>
+      <div class="les-prog" aria-hidden="true"><span class="blk blk--round blk--sensor"><svg class="blk__ico"><use href="#les-ico-colour"/></svg><span class="blk__pill">B</span>цвет</span></div>
+      <p class="les-mode__val les-mode__val--name"><i id="les-see-sw"></i><output id="les-see-name">ақ</output></p>
+      <p class="les-mode__hint">Жауабы — түстің атауы немесе «түс жоқ».</p>
+    </div>
+    <div class="les-see__text">
+      <p class="les-see__note" id="les-see-note" aria-live="polite"></p>
+      <p>Екі режим, жауаптың екі түрі: атау немесе сан. Сызық үшін сан пайдалырақ. Сан датчиктің сызыққа қаншалықты кіргенін көрсетеді.</p>
+      <p class="les-small">Мұндағы сандар біздің симулятордағыдай: ақ — шамамен 95 %, қара — шамамен 5 %. Нағыз алаңда олар басқаша болады.</p>
+    </div>
+  </div>
+  <dl class="les-specs">
+    <div><dt>Өз шамдары</dt><dd>3 ақ шам</dd></div>
+    <div><dt>Өлшейді</dt><dd>секундына 100 рет</dd></div>
+    <div><dt>Ең жақсы көреді</dt><dd>16 мм-ден</dd></div>
+    <div><dt>Біледі</dt><dd>8 түс және «түс жоқ»</dd></div>
+  </dl>
+</section>
+
+<section class="les-sec les-thr" id="les-thr" aria-labelledby="les-thr-title">
+  <div>
+    <h2 id="les-thr-title">Шек</h2>
+    <p class="les-lead">Шек — «қара» мен «ақ» арасындағы сан. Көрсеткіш шектен аз: датчиктің астында күңгірт жер, яғни сызық. Шектен көп: ашық жер, яғни алаң.</p>
+  </div>
+  <div class="les-thr__bench">
+    <div class="les-thr__lab">
+      <div class="les-scale" id="les-scale" role="img" aria-labelledby="les-thr-sum">
+        <span class="les-scale__flag les-scale__flag--t"><b id="les-thr-t">50</b> шек</span>
+        <div class="les-scale__bar"></div>
+        <span class="les-scale__flag les-scale__flag--b"><b id="les-thr-bn">5</b> қара</span>
+        <span class="les-scale__flag les-scale__flag--w"><b id="les-thr-wn">95</b> ақ</span>
+      </div>
+      <p class="les-thr__sum" id="les-thr-sum" aria-live="polite"></p>
+      <div class="les-thr__in">
+        <label class="les-range">Датчик қара үстінде: <output id="les-thr-bo">5</output> %<input type="range" id="les-thr-b" min="0" max="45" value="5"></label>
+        <label class="les-range">Датчик ақ үстінде: <output id="les-thr-wo">95</output> %<input type="range" id="les-thr-w" min="55" max="100" value="95"></label>
+      </div>
+      <div class="les-thr__sets">
+        <button type="button" class="btn" data-thr="5,95">Біздің симулятор: 5 және 95</button>
+        <button type="button" class="btn" data-thr="25,95">Ескі алаң: 25 және 95</button>
+      </div>
+    </div>
+    <div class="les-thr__why">
+      <h3>Калибрлеу</h3>
+      <p>Көрсеткіштер бөлмедегі жарыққа және датчиктің еденнен биіктігіне байланысты. Жарысқа арналған бір ескі алаңда датчик қарада шамамен 25 %, ал ақта шамамен 95 % көрсетті.</p>
+      <p>Сондықтан шекті өз алаңында өлшейді: датчикті алдымен ақ жерге, сосын қара жерге қояды, екі санды жазып алып, олардың ортасын алады. Калибрлеу деген — осы.</p>
+      <p class="les-try">«Датчик не көреді» тапсырмасы «Бағдарлама» бетінде: ақ алаңды, қара сызықты және шекараны өлше, шекті есепте.</p>
+    </div>
+  </div>
+</section>
+
+<section class="les-sec les-edge" id="les-edge" aria-labelledby="les-edge-title">
+  <div>
+    <h2 id="les-edge-title">Сызықтың шетімен жүреміз</h2>
+    <p class="les-lead">Роботта бір ғана датчик бар, ол өз астындағы кішкентай бір дақты көреді. Сондықтан робот сызықтың ортасымен емес, шетімен жүреді.</p>
+  </div>
+  <div class="les-why">
+    <figure>
+      <svg viewBox="0 0 200 130" aria-hidden="true">
+        <rect class="les-why__line" x="84" width="32" height="130"/>
+        <path class="les-why__go" d="M92 66H50M108 66h42"/>
+        <path class="les-why__tip" d="M50 58v16l-12-8zM150 58v16l12-8z"/>
+        <circle class="les-why__ghost" cx="26" cy="66" r="11"/>
+        <circle class="les-why__ghost" cx="174" cy="66" r="11"/>
+        <circle class="les-why__eye" cx="100" cy="66" r="11"/>
+        <text class="les-why__q" x="26" y="42">?</text>
+        <text class="les-why__q" x="174" y="42">?</text>
+      </svg>
+      <figcaption><b>Ортасымен жүре алмайды.</b> Датчик сызықтың үстінде тұрғанда, робот қай жаққа ығысса да, ол қараны көреді. Ал аққа шығып кетсе, сызықтың қай жақта қалғанын білмейді.</figcaption>
+    </figure>
+    <figure>
+      <svg viewBox="0 0 200 130" aria-hidden="true">
+        <rect class="les-why__line" x="84" width="32" height="130"/>
+        <circle class="les-why__ghost" cx="106" cy="32" r="11"/>
+        <circle class="les-why__ghost" cx="128" cy="100" r="11"/>
+        <circle class="les-why__eye" cx="116" cy="66" r="11"/>
+        <path class="les-why__go" d="M122 32h32M112 100H82"/>
+        <path class="les-why__tip" d="M154 24v16l12-8zM82 92v16l-12-8z"/>
+        <text class="les-why__lbl" x="42" y="37">күңгірт</text>
+        <text class="les-why__lbl" x="170" y="105">ашық</text>
+      </svg>
+      <figcaption><b>Шетімен жүре алады.</b> Шетте датчик жартылай қараны, жартылай ақты көреді. Күңгірттеу болды: робот сызыққа кірді. Ашығырақ болды: ол сызықтан алыстап барады.</figcaption>
+    </figure>
+    <div class="les-rule">
+      <h3>Ереже</h3>
+      <p class="les-rule__dark"><b>Шектен күңгірттеу</b> Оңға, аққа қарай бұрыл.</p>
+      <p class="les-rule__light"><b>Шектен ашығырақ</b> Солға, сызыққа қарай бұрыл.</p>
+      <p class="les-small">Сызық сол жақта қалады, датчик оның оң жақ шетімен жүреді. Ереженің небәрі екі жауабы бар, сондықтан робот зигзагпен жүреді. Инженерлер мұндай ережені релелік реттегіш деп атайды.</p>
+    </div>
+  </div>
+  <div class="les-zig" id="les-zig">
+    <figure class="les-zig__fig">
+      <svg class="les-zig__svg" id="les-zig-svg" viewBox="-18 -26 30 40" role="img" aria-label="Үстінен көрініс: робот қара сызықтың оң жақ шетімен ирелеңдеп жүреді.">
+        <g id="les-zig-world">
+          <path class="les-zig__marks" d="M-17.4 -200V100"/>
+          <path class="les-zig__line" id="les-zig-line"/>
+          <polyline class="les-zig__trail" id="les-zig-trail"/>
+          <g id="les-zig-bot">
+            <use class="les-zig__bot" href="#les-bot" x="-7.2" y="-6.4" width="14.4" height="12.8"/>
+            <circle class="les-zig__eye" id="les-zig-eye" r="0.6"/>
+          </g>
+        </g>
+        <path class="les-zig__ruler" d="M-16 12h10M-16 11.3v1.4M-6 11.3v1.4"/>
+        <text class="les-zig__rulertxt" x="-11" y="10.6">10 см</text>
+      </svg>
+      <figcaption>Үстінен көрініс. Қызғылт сызық — датчиктің ізі. Астындағы сызық көрінсін деп, робот мөлдір етіп салынған.</figcaption>
+    </figure>
+    <div class="les-zig__side">
+      <div class="les-zig__read">
+        <p class="les-mode__name">Датчик көреді</p>
+        <p class="les-mode__val"><output id="les-zig-num">50</output> %</p>
+        <div class="les-bar les-bar--thr" id="les-zig-bar"><i></i></div>
+        <p class="les-mode__hint">Қызғылт белгі — шек 50.</p>
+      </div>
+      <div class="les-prog les-zig__if" role="img" aria-label="Если B отражённый свет меньше 50 процентов, то начать движение вправо: 30, иначе начать движение влево: -30. Қазір жұмыс істеп тұрған тармақ жарқырайды.">
+        <div class="blk-c blk--ctrl">
+          <div class="blk-c__bar">если<span class="blk blk--bool blk--sensor"><svg class="blk__ico"><use href="#les-ico-colour"/></svg><span class="blk__pill">B</span>отражённый свет<span class="blk__dd">&lt;</span><span class="blk__num">50</span>%?</span>, то</div>
+          <div class="blk-c__in"><div class="blk blk--move" id="les-zig-then"><svg class="blk__ico"><use href="#les-ico-move"/></svg>начать движение<span class="blk__num">вправо: 30</span></div></div>
+          <div class="blk-c__bar">иначе</div>
+          <div class="blk-c__in"><div class="blk blk--move" id="les-zig-else"><svg class="blk__ico"><use href="#les-ico-move"/></svg>начать движение<span class="blk__num">влево: -30</span></div></div>
+          <div class="blk-c__bar blk-c__bar--end"></div>
+        </div>
+      </div>
+      <p class="les-zig__say" id="les-zig-say"></p>
+      <div class="les-zig__ctl">
+        <button type="button" class="btn btn--primary" id="les-zig-play" aria-pressed="false">Іске қосу</button>
+        <button type="button" class="btn" id="les-zig-slow" aria-pressed="false">Баяу</button>
+      </div>
+      <p class="les-small">Жылдамдық 30 %, бұрылыстар 30 және −30: төмендегі бағдарламадағы сандармен бірдей.</p>
+    </div>
+  </div>
+</section>
+
+<section class="les-sec les-code" id="les-code" aria-labelledby="les-code-title">
+  <div>
+    <h2 id="les-code-title">Бағдарлама</h2>
+    <p class="les-lead">Екі жолдан тұратын ереже — бұл «повторять всегда» блогының ішіндегі бір «если … иначе» блогы. Олардың алдында екі баптау бар.</p>
+  </div>
+  <div class="les-code__bench">
+    <div class="les-canvas">
+      <div class="les-prog les-prog--big" role="img" aria-label="Когда запускается подпрограмма: установить моторы для движения C+D, установить скорость движения 30 процентов, повторять всегда: если B отражённый свет меньше 50 процентов, то начать движение вправо: 30, иначе начать движение влево: -30.">
+        <div class="blk blk--hat blk--event"><svg class="blk__ico"><use href="#les-ico-play"/></svg>когда запускается подпрограмма</div>
+        <div class="blk blk--move"><svg class="blk__ico"><use href="#les-ico-move"/></svg>установить моторы для движения<span class="blk__pill">C+D</span></div>
+        <div class="blk blk--move"><svg class="blk__ico"><use href="#les-ico-move"/></svg>установить скорость движения<span class="blk__num">30</span>%</div>
+        <div class="blk-c blk-c--loop blk--ctrl">
+          <div class="blk-c__bar">повторять всегда</div>
+          <div class="blk-c__in">
+            <div class="blk-c blk--ctrl">
+              <div class="blk-c__bar">если<span class="blk blk--bool blk--sensor"><svg class="blk__ico"><use href="#les-ico-colour"/></svg><span class="blk__pill">B</span>отражённый свет<span class="blk__dd">&lt;</span><span class="blk__num">50</span>%?</span>, то</div>
+              <div class="blk-c__in"><div class="blk blk--move"><svg class="blk__ico"><use href="#les-ico-move"/></svg>начать движение<span class="blk__num">вправо: 30</span></div></div>
+              <div class="blk-c__bar">иначе</div>
+              <div class="blk-c__in"><div class="blk blk--move"><svg class="blk__ico"><use href="#les-ico-move"/></svg>начать движение<span class="blk__num">влево: -30</span></div></div>
+              <div class="blk-c__bar blk-c__bar--end"></div>
+            </div>
+          </div>
+          <div class="blk-c__bar blk-c__bar--end blk-c__bar--loop"></div>
+        </div>
+      </div>
+    </div>
+    <ol class="les-lines">
+      <li class="is-event"><b>когда запускается подпрограмма</b> Бағдарламаны іске қосқанда, ол жұмысын бастайды.</li>
+      <li class="is-move"><b>установить моторы для движения C+D</b> Бірінші әріп — сол мотор, екіншісі — оң мотор. Қолданбада бұл жерде алдымен A+B тұрады: онымен біздің робот орнынан қозғалмайды.</li>
+      <li class="is-move"><b>установить скорость движения 30 %</b> Онша жылдам емес. Жылдамдық неғұрлым жоғары болса, бұрылыста сызықта қалу соғұрлым қиын.</li>
+      <li class="is-ctrl"><b>повторять всегда</b> Ішіндегінің бәрі бағдарламаны тоқтатқанша қайта-қайта орындала береді.</li>
+      <li class="is-sensor"><b>B отражённый свет &lt; 50 %?</b> B портындағы датчикке сұрақ: сенің астыңда шектен күңгірттеу ме?</li>
+      <li class="is-move"><b>то начать движение вправо: 30</b> Иә, күңгірт. Робот оңға қарай бұрылады: оң дөңгелек сол дөңгелектен баяу айналады.</li>
+      <li class="is-move"><b>иначе начать движение влево: -30</b> Жоқ, ашық. Робот солға қарай бұрылады: енді сол дөңгелек баяуырақ айналады.</li>
+    </ol>
+  </div>
+  <div class="les-code__notes">
+    <p><b>«начать движение» блогы күтпейді.</b> Ол дөңгелектерді іске қосады да, бағдарлама бірден датчиктен қайта сұрайды. Ондағы сан — бұрылыс: −100-ден (солға) 100-ге дейін (оңға). 0 — тура. 30 болғанда бір дөңгелек екіншісінен екі жарым есе баяу айналады.</p>
+    <div>
+      <p><b>LEGO-да қалай.</b> SPIKE қолданбасында сызық туралы сабақ бар: «Курсы», «К соревнованиям готовы!», «Учебное соревнование 3: Обнаружение линий». Ондағы бірінші бағдарлама санды емес, түстің атауын сұрайды, ал бұрылыстары күртірек: 50 және −50.</p>
+      <div class="les-prog" role="img" aria-label="Шарт: B цвет чёрный?"><span class="blk blk--bool blk--sensor"><svg class="blk__ico"><use href="#les-ico-colour"/></svg><span class="blk__pill">B</span>цвет<span class="blk__pill blk__pill--black" aria-hidden="true"></span>?</span></div>
+      <p>Шағылған жарықпен жұмыс істейтін бағдарлама онда жылдамырақ жүру үшін кеңес ретінде берілген. Біздің бағдарлама — сол кеңес. Тек LEGO-да оны хабтың оң жақ батырмасы іске қосады, ал бізде — «когда запускается подпрограмма» блогы.</p>
+    </div>
+    <p class="les-try">«Сызықпен зигзаг» тапсырмасы «Бағдарлама» бетінде: осы бағдарламаны өзің құрастыр.</p>
+  </div>
+</section>
+
+<section class="les-sec les-tune" id="les-tune" aria-labelledby="les-tune-title">
+  <div>
+    <h2 id="les-tune-title">Баптау</h2>
+    <p class="les-lead">Робот көбіне бірінші реттен жақсы жүрмейді. Оның не істеп жатқанын бақыла және әр жолы бір ғана санды өзгерт.</p>
+  </div>
+  <table class="les-tab les-fix">
+    <thead><tr><th scope="col">Робот не істейді</th><th scope="col">Нені өзгерту керек</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Бұрылыста сызықтан шығып кетеді</th><td>Жылдамдықты азайт. Немесе бұрылысты күртірек жаса: мысалы, 50 және −50.</td></tr>
+      <tr><th scope="row">Қатты ирелеңдейді</th><td>Бұрылысты жұмсағырақ жаса: мысалы, 20 және −20. Бірақ сызықтың күрт бұрылысында мұндай руль жетпеуі мүмкін.</td></tr>
+      <tr><th scope="row">Орнында тұрады немесе артқа жүреді</th><td>«установить моторы для движения» блогын тексер. A+B: робот тұрады. D+C: артқа жүреді. C+D керек.</td></tr>
+      <tr><th scope="row">Сызықтан алыстап, айналып жүреді</th><td>Жақтары шатасқан. Күңгіртте — оңға, ашықта — солға. Роботты датчик сызықтың оң жақ шетінде болатындай етіп қой.</td></tr>
+      <tr><th scope="row">Сызықты байқамайды</th><td>Датчик блогында B порты тұруы керек. Шекті қайта өлше. Биіктікті тексер: датчик 16 мм биіктіктен ең жақсы көреді.</td></tr>
+    </tbody>
+  </table>
+  <p class="les-sum"><b>Жылдамдық немесе дәлдік.</b> Робот неғұрлым жылдам жүрсе, оған сызықта қалу соғұрлым қиын. Жақсы баптау — робот сызықтан әлі шығып кетпейтін ең жылдам баптау.</p>
+  <p class="les-try">«Тезірек!» тапсырмасы «Бағдарлама» бетінде: күрт бұрылысы бар трассаға жылдамдық пен бұрылыстарды таңда.</p>
+</section>
+
+<section class="les-sec les-smooth" id="les-smooth" aria-labelledby="les-smooth-title">
+  <div>
+    <p class="les-star">Жұлдызшалы</p>
+    <h2 id="les-smooth-title">Жұмсағырақ</h2>
+    <p class="les-lead">Зигзаг тек екі бұрылысты біледі. Ал датчик сызықтың шетінен неғұрлым алыс кетсе, соғұрлым күртірек бұрылуға болады.</p>
+  </div>
+  <div class="les-smooth__bench">
+    <div class="les-smooth__left">
+      <p class="les-formula">бұрылыс = (шек − көрсеткіш) × коэффициент</p>
+      <div class="les-canvas">
+        <div class="les-prog les-prog--big" role="img" aria-label="Повторять всегда: начать движение с поворотом, равным 50 минус B отражённый свет, умножить на 1.2.">
+          <div class="blk-c blk-c--loop blk--ctrl">
+            <div class="blk-c__bar">повторять всегда</div>
+            <div class="blk-c__in">
+              <div class="blk blk--move"><svg class="blk__ico"><use href="#les-ico-move"/></svg>начать движение<span class="blk blk--round blk--op"><span class="blk blk--round blk--op"><span class="blk__num">50</span>-<span class="blk blk--round blk--sensor"><svg class="blk__ico"><use href="#les-ico-colour"/></svg><span class="blk__pill">B</span>отражённый свет</span></span>*<span class="blk__num">1.2</span></span></div>
+            </div>
+            <div class="blk-c__bar blk-c__bar--end blk-c__bar--loop"></div>
+          </div>
+        </div>
+      </div>
+      <p class="les-small">Қолданбаның блоктарында минус «-», ал көбейту «*» деп жазылады.</p>
+    </div>
+    <div class="les-smooth__right">
+      <table class="les-tab les-calc">
+        <thead><tr><th scope="col">Датчик көреді</th><th scope="col">Есептейміз</th><th scope="col">Бұрылыс</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">20 %, сызыққа кірді</th><td>(50 − 20) × 1.2 = 36</td><td>вправо: 36</td></tr>
+          <tr><th scope="row">50 %, дәл шетінде</th><td>(50 − 50) × 1.2 = 0</td><td>прямо: 0</td></tr>
+          <tr><th scope="row">80 %, аққа шығып кетті</th><td>(50 − 80) × 1.2 = −36</td><td>влево: -36</td></tr>
+        </tbody>
+      </table>
+      <p>Сызықтың шетінде көрсеткіш шекке тең, сондықтан робот тура жүреді. Шектен күңгірттеу: сан нөлден үлкен, бұрылыс оңға, зигзагтағыдай. Шеттен неғұрлым алыс болса, бұрылыс соғұрлым күрт.</p>
+      <p>Коэффициентті сынап көріп таңдайды, әр роботтың өз коэффициенті бар. Тым кіші: робот әлсіз бұрылады да, сызықты жоғалтады. Тым үлкен: робот қайтадан ирелеңдейді. Инженерлер бұл ережені пропорционал реттегіш деп атайды.</p>
+      <p class="les-try">«Жұмсақ руль» тапсырмасы «Бағдарлама» бетінде.</p>
+    </div>
+  </div>
+</section>
+
+<section class="les-sec les-build" id="les-build" aria-labelledby="les-build-title">
+  <div>
+    <h2 id="les-build-title">Құрастыру және бөлшектеу</h2>
+    <p class="les-lead">Нұсқаулық SPIKE қолданбасында: «Модели», сосын «Мобильная платформа 3». Онда екі құрастыру бар: «Мобильная платформа», 34 қадам, және «датчик цвета», 4 қадам. Платформаны біз бұрын құрастырғанбыз, бүгін тек датчик жаңа.</p>
+  </div>
+  <div class="les-build__bench">
+    <div class="les-build__stage" id="les-build-stage" role="img" aria-label="Құрастыру кезеңіндегі үш өлшемді модель. Оны айналдыруға болады."></div>
+    <div class="les-build__card" aria-live="polite">
+      <p class="les-build__steps"><span id="les-stage-n"></span> <span id="les-stage-steps"></span></p>
+      <h3 id="les-stage-title"></h3>
+      <p id="les-stage-text"></p>
+      <p class="les-build__parts"><b>Бөлшектер</b> <span id="les-stage-parts"></span></p>
+      <div class="les-build__nav">
+        <button type="button" class="btn" id="les-stage-prev" disabled>Артқа</button>
+        <button type="button" class="btn btn--primary" id="les-stage-next">Әрі қарай</button>
+      </div>
+    </div>
+  </div>
+  <div>
+    <ol class="les-rail" id="les-rail" aria-label="Құрастыру кезеңдері, нұсқаулықтың әр қадамына бір тесік"></ol>
+    <p class="les-rail__key"><span class="les-rail__base">«Мобильная платформа» құрастыруы, 1–34-қадамдар</span><span class="les-rail__new">«датчик цвета» құрастыруы, 1–4-қадамдар</span></p>
+  </div>
+  <div class="les-build__how">
+    <p><b>Жұппен жұмыс істейміз.</b> Біреуі қадамды оқып, бөлшектерді береді, екіншісі құрастырады. Әр кезеңнен кейін ауысыңдар. Соңында кабельдерді тексеріңдер.</p>
+    <p class="les-ports"><span>Сол дөңгелек <b>C</b></span><span>Оң дөңгелек <b>D</b></span><span>Үлкен мотор <b>E</b></span><span>Түс датчигі <b>B</b></span></p>
+  </div>
+  <div class="les-build__take">
+    <div>
+      <p><b>Сынақ трассасы.</b> Ақ алаңда жуан қара сызық керек: қағаз парағына жапсырылған қара оқшаулағыш таспа немесе қағазға салынған сызық. Түзу сызықтан және жұмсақ бұрылыстардан бастаңдар, күрт бұрылыстарды кейінге қалдырыңдар.</p>
+    </div>
+    <div>
+      <label class="les-range">Бөлшектеу<input type="range" id="les-explode" min="0" max="100" value="0"></label>
+      <p>Сабақтың соңында модельді бөлшектеңдер де, бөлшектерді ұяшықтарға сұрыптап салыңдар: штифт — штифтке, арқалық — арқалыққа. Кабельдерді хабтан ұшынан ұстап суырыңдар, сымынан тартпаңдар.</p>
+    </div>
+  </div>
+</section>
+
+<section class="les-sec les-quiz" id="les-quiz" aria-labelledby="les-quiz-title">
+  <div class="les-quiz__head">
+    <h2 id="les-quiz-title">Шағын тест</h2>
+    <p class="les-quiz__pins" id="les-quiz-pins" role="img"></p>
+    <p class="les-quiz__last" id="les-quiz-last"></p>
+  </div>
+  <div class="les-quiz__box" id="les-quiz-box"></div>
+</section>
+
+<footer class="les-foot">
+  <a class="btn btn--primary les-foot__next" href="#examples">Әрі қарай: өмірде</a>
+  <p>LEGO және SPIKE — LEGO Group компаниясының тауар белгілері. Бұл — мұғалімнің оқу материалы, ол LEGO Group-пен байланысты емес және LEGO Group тарапынан мақұлданбаған.</p>
+</footer>
+
+</div>

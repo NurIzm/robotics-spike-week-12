@@ -12,6 +12,48 @@ Week 10's copy (`../Week 10/kk`, `../Week 10/src/kk`) is the precedent, week 9's
 replaces week 10's model words with this week's. Anything that is the same as last week (interface, block labels, colours,
 quiz messages) takes last week's wording.
 
+## Week 12 «Сызық бойымен»: what changed (wins over the week 11 tables below)
+
+- **Blocks stay Russian.** The teacher's rule for this week: the block programming area and everything inside it stays as in
+  the Russian site. `kk/index.html` loads the shared `../js/blocks.js`, `../js/programs.js` and `msg_ru.js`; there is no
+  `kk/js/blocks.js`. When Kazakh text names a block, a category, a block's menu option or a picker, keep its Russian words in
+  «…» and put the Kazakh noun after: ««повторять всегда» блогы», ««если … то … иначе» блогын», ««Движение» категориясы»,
+  ««отражённый свет» режимі» only where it quotes the block. Programs shown as text or code in the lesson keep the Russian
+  block words too.
+- The SPIKE app is Russian: its names stay Russian in quotes: the model page «Мобильная платформа 3», the builds «Мобильная
+  платформа» (34 steps) and «датчик цвета» (4 steps), LEGO's lesson «Учебное соревнование 3: Обнаружение линий».
+- Storage prefix `'liniya-kk.'` in `kk/js/core.js`.
+
+| Русский | Қазақша |
+|---|---|
+| По линии (title) | Сызық бойымен |
+| Мобильная платформа 3 (kicker, running text) | Мобильді платформа 3; running text «мобильді платформа» |
+| Неделя 12 | 12-апта |
+| линия / чёрная линия / край линии / граница | сызық / қара сызық / сызықтың шеті / шекара |
+| движение по линии; робот едет по линии | сызық бойымен жүру; робот сызық бойымен жүреді |
+| датчик цвета (в порту B) | түс датчигі (B портындағы түс датчигі) |
+| отражённый свет / режим отражённого света | шағылған жарық / шағылған жарық режимі |
+| цвет (режим цвета) | түс (түс режимі) |
+| яркость, светлее / темнее | жарықтық, ашығырақ / күңгірттеу |
+| порог (число 50) | шек: «шек 50», «шектен аз», «шекті таңда» |
+| калибровка, откалибровать | калибрлеу, калибрле |
+| белое поле / чёрная линия / белый лист | ақ алаң / қара сызық / ақ парақ |
+| руль / поворот / рулевое значение | руль / бұрылыс / руль мәні |
+| плавный руль / плавнее | жұмсақ руль / жұмсағырақ |
+| пропорциональный (руль) | пропорционал (руль) |
+| зигзаг / виляет / виляние | зигзаг / ирелеңдейді / ирелеңдеу |
+| круг (lap) / пройти круг | айналым / бір айналым жүріп шығу |
+| трасса / маршрут / стоп-линия | трасса / маршрут / тоқтау сызығы |
+| скорость / мощность / угол | жылдамдық / қуат / бұрыш |
+| колесо / левое / правое | дөңгелек / сол / оң |
+| большой мотор с шестернёй (E) | тісті дөңгелегі бар үлкен мотор (E) |
+| шаровая опора | шарлы тірек |
+| балка / штифт / зажим (cable clip) / соединитель | арқалық / штифт / қысқыш / жалғағыш |
+| хаб / кабель / порт | хаб / кабель / порт |
+| На старт (button) / Всё поле / За роботом / След | Стартқа / Бүкіл алаң / Робот артынан / Із |
+| Что видит датчик / Стоп на линии / Зигзаг по линии / Быстрее! / Плавный руль / Стоп на красном (tasks) | Датчик не көреді / Сызықта тоқта / Сызықпен зигзаг / Тезірек! / Жұмсақ руль / Қызылда тоқта |
+| цвета: чёрный, белый, красный, жёлтый, зелёный, синий, голубой, фиолетовый, нет цвета | қара, ақ, қызыл, сары, жасыл, көк, көгілдір, күлгін, түс жоқ |
+
 ## Style
 
 - Kazakh Cyrillic as in current school textbooks, with ә ғ қ ң ө ұ ү һ і where the word needs them. No Latin script except

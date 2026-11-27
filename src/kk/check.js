@@ -2,7 +2,7 @@
 const fs = require('fs'), path = require('path');
 const ROOT = path.join(__dirname, '..', '..');
 const PAIRS = [
-  ...['blocks', 'core', 'examples', 'lesson', 'program', 'robot', 'scenes', 'sim', 'vm'].map((f) => [`js/${f}.js`, `kk/js/${f}.js`]),
+  ...['core', 'examples', 'lesson', 'program', 'robot', 'scenes', 'sim', 'vm'].map((f) => [`js/${f}.js`, `kk/js/${f}.js`]),
   ...['start', 'lesson', 'examples', 'program'].map((v) => [`src/views/${v}.html`, `src/kk/views/${v}.html`]),
   ['src/index.template.html', 'src/kk/index.template.html'],
 ];
